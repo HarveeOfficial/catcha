@@ -6,7 +6,7 @@
     <div class="py-8 max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
         <div class="bg-white shadow rounded p-6">
             <h3 class="text-lg font-semibold mb-4">Catch Details</h3>
-            <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <dt class="font-medium text-gray-600">Caught At</dt><dd>{{ $catch->caught_at->format('Y-m-d H:i') }}</dd>
                 <dt class="font-medium text-gray-600">Species</dt><dd>{{ optional($catch->species)->common_name ?? '—' }}</dd>
                 <dt class="font-medium text-gray-600">Quantity (kg)</dt><dd>{{ $catch->quantity }}</dd>
@@ -23,7 +23,7 @@
             </dl>
         </div>
 
-        <div class="bg-white shadow rounded p-6">
+    <div class="bg-white shadow rounded p-6">
             <h3 class="text-lg font-semibold mb-4">Feedback</h3>
             @if (session('status'))
                 <div class="mb-4 text-sm text-green-600">{{ session('status') }}</div>
@@ -50,7 +50,7 @@
                             @endif
                         </div>
                         <p class="text-sm whitespace-pre-line">{{ $fb->comments }}</p>
-                        <div class="flex items-center gap-4 text-xs">
+                        <div class="flex flex-wrap items-center gap-4 text-xs">
                             <div class="flex items-center gap-1">
                                 @php($liked = $fb->likes->where('user_id',auth()->id())->count()>0)
                                 @if($liked)

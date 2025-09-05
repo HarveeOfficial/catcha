@@ -22,7 +22,8 @@
         </div>
         <div class="bg-white overflow-hidden shadow-sm rounded-md">
             <div class="p-4">
-                <div class="overflow-x-auto">
+                <!-- Desktop table -->
+                <div class="hidden md:block overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="border-b bg-gray-50">
                             <tr class="text-left text-gray-600">
@@ -67,6 +68,31 @@
                         @endforelse
                         </tbody>
                     </table>
+                </div>
+                <!-- Mobile cards -->
+                <div class="md:hidden divide-y divide-gray-200">
+                    @forelse($catches as $c)
+                        <a href="{{ route('catches.feedback.index', $c) }}" class="block py-3 group">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm font-medium text-slate-800 group-hover:text-indigo-600">{{ $c->caught_at->format('Y-m-d H:i') }}</div>
+                                <div class="text-[10px] uppercase tracking-wide text-slate-500">{{ optional($c->species)->common_name ?? '—' }}</div>
+                            </div>
+                            <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+                                <span><span class="font-medium">Qty:</span> {{ $c->quantity }}</span>
+                                <span><span class="font-medium">Count:</span> {{ $c->count }}</span>
+                                <span><span class="font-medium">Loc:</span> {{ $c->location ?: '—' }}</span>
+                                <span><span class="font-medium">Gear:</span> {{ $c->gear_type ?: '—' }}</span>
+                                @if(auth()->user()->isExpert() || auth()->user()->isAdmin())
+                                    <span><span class="font-medium">Feedback:</span> {{ $c->feedbacks_count ?? $c->feedbacks()->count() }}</span>
+                                @endif
+                            </div>
+                            @if(auth()->user()->isExpert() || auth()->user()->isAdmin())
+                                <div class="mt-1 text-[11px] text-slate-500">Fisher: {{ optional($c->user)->name ?? '—' }}</div>
+                            @endif
+                        </a>
+                    @empty
+                        <p class="py-6 text-center text-sm text-gray-500">{{ __('No catches recorded yet.') }}</p>
+                    @endforelse
                 </div>
                 <div class="mt-4">{{ $catches->links() }}</div>
             </div>
