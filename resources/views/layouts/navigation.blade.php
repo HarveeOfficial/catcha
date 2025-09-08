@@ -21,6 +21,9 @@
                     <x-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
                         {{ __('Analytics') }}
                     </x-nav-link>
+                     <x-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
+                        {{ __('Seasonal Trends') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
                         {{ __('Guidance') }}
                     </x-nav-link>
@@ -30,8 +33,8 @@
                     <x-nav-link :href="route('ai.consult')" :active="request()->routeIs('ai.consult')">
                         {{ __('AI Consult') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
-                        {{ __('Seasonal Trends') }}
+                    <x-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
+                        {{ __('Weather Map') }}
                     </x-nav-link>
                     </div>
             </div>
@@ -108,6 +111,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
                 {{ __('Seasonal Trends') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
+                {{ __('Weather Map') }}
             </x-responsive-nav-link>
         </div>
 

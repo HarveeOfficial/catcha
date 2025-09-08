@@ -72,6 +72,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/weather/current', WeatherController::class)->name('weather.current');
     Route::get('/weather/forecast', WeatherForecastController::class)->name('weather.forecast');
     Route::get('/weather/city', WeatherCityController::class)->name('weather.city');
+    // Interactive weather map (click-to-fetch current + forecast)
+    Route::view('/weather/map', 'weather.map')->name('weather.map');
     // Removed standalone weather page; weather now integrated into dashboard
     // AI consult endpoint
     Route::post('/ai/consult', AiConsultController::class)->name('ai.consult');
