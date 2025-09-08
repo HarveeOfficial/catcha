@@ -36,6 +36,9 @@
                     <x-nav-link :href="route('ai.consult')" :active="request()->routeIs('ai.consult')">
                         {{ __('AI Consult') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
+                        {{ __('Heatmap') }}
+                    </x-nav-link>
                     </div>
             </div>
 
@@ -114,6 +117,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
                 {{ __('Weather Map') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
+                {{ __('Heatmap') }}
             </x-responsive-nav-link>
         </div>
 

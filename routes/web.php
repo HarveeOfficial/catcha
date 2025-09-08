@@ -12,6 +12,7 @@ use App\Http\Controllers\PublicAnalyticsController;
 use App\Http\Controllers\WeatherCityController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\WeatherForecastController;
+use App\Http\Controllers\HeatmapController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -103,6 +104,9 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/guidances/{guidance}', [GuidanceController::class, 'destroy'])->name('guidances.destroy');
     Route::post('/guidances/{guidance}/approve', [GuidanceController::class, 'approve'])->name('guidances.approve');
     Route::post('/guidances/{guidance}/reject', [GuidanceController::class, 'reject'])->name('guidances.reject');
+    Route::get('/catches/heatmap', [HeatmapController::class, 'view'])->name('catches.heatmap');
+    Route::get('/catches/heatmap/data', [HeatmapController::class, 'data'])->name('catches.heatmap.data');
+    Route::get('/catches/heatmap/point-info', [\App\Http\Controllers\HeatmapController::class, 'pointInfo'])->name('catches.heatmap.point-info');
 });
 
 Route::middleware('auth')->group(function () {
