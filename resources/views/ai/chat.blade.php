@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">AI Consult (Chat)</h2>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Catcha - AI chatbot</h2>
     </x-slot>
 
     <div class="py-6" x-data="chatApp()">
@@ -29,9 +29,9 @@
                     <textarea x-model="input" rows="2" placeholder="Ask a question about fishing, weather, sustainability..." class="w-full border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm" required></textarea>
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
-                            <label class="flex items-center gap-1">
+                            {{-- <label class="flex items-center gap-1">
                                 <input type="checkbox" x-model="compact" class="rounded border-gray-300" /> Compact
-                            </label>
+                            </label> --}}
                             <label class="flex items-center gap-1">
                                 <input type="checkbox" x-model="saveConversation" class="rounded border-gray-300" /> Save
                             </label>
