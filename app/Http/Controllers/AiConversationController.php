@@ -44,6 +44,9 @@ class AiConversationController extends Controller
     {
         abort_unless($conversation->user_id === Auth::id(), 403);
         $conversation->delete();
+        if (request()->wantsJson()) {
+            return response()->noContent(); // 204
+        }
 
         return redirect()->route('ai.conversations.index')->with('status', 'Conversation deleted');
     }

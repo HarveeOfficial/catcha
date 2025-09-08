@@ -17,9 +17,14 @@
                             <div class="p-3 text-gray-400">No chats yet.</div>
                         </template>
                         <template x-for="c in conversations" :key="c.id">
-                            <button type="button" @click="switchConversation(c.id)"
-                                :class="['w-full text-left px-3 py-2 hover:bg-indigo-50 focus:outline-none focus:bg-indigo-50 border-b truncate', c.id===conversationId ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-700']"
-                                x-text="truncate(c.title||'Untitled')"></button>
+                            <div class="group relative">
+                                <button type="button" @click="switchConversation(c.id)"
+                                    :class="['w-full text-left pr-8 pl-3 py-2 hover:bg-indigo-50 focus:outline-none focus:bg-indigo-50 border-b truncate', c.id===conversationId ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-700']"
+                                    x-text="truncate(c.title||'Untitled')"></button>
+                                <button type="button" @click="deleteConversation(c.id)" title="Delete" class="absolute top-0 right-0 h-full px-2 text-gray-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition">
+                                    &times;
+                                </button>
+                            </div>
                         </template>
                     </div>
                 </div>
@@ -37,9 +42,12 @@
                                 <div class="p-3 text-gray-400">No chats yet.</div>
                             </template>
                             <template x-for="c in conversations" :key="c.id">
-                                <button type="button" @click="switchConversation(c.id); mobileSidebar=false"
-                                    :class="['w-full text-left px-3 py-2 hover:bg-indigo-50 focus:outline-none focus:bg-indigo-50 border-b truncate', c.id===conversationId ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-700']"
-                                    x-text="truncate(c.title||'Untitled')"></button>
+                                <div class="group relative">
+                                    <button type="button" @click="switchConversation(c.id); mobileSidebar=false"
+                                        :class="['w-full text-left pr-8 pl-3 py-2 hover:bg-indigo-50 focus:outline-none focus:bg-indigo-50 border-b truncate', c.id===conversationId ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-gray-700']"
+                                        x-text="truncate(c.title||'Untitled')"></button>
+                                    <button type="button" @click="deleteConversation(c.id); mobileSidebar=false" title="Delete" class="absolute top-0 right-0 h-full px-2 text-gray-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition">&times;</button>
+                                </div>
                             </template>
                         </div>
                         <button @click="mobileSidebar=false" class="m-3 px-3 py-1 rounded bg-gray-200 text-xs">Close</button>
@@ -53,25 +61,37 @@
                             <button class="sm:hidden text-gray-500" @click="mobileSidebar=true" title="Conversations">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h18M3 12h18M3 19h18"/></svg>
                             </button>
-                            <div class="font-semibold">Session</div>
+                            <div class="flex items-center gap-2 font-semibold">
+                                <img src="{{ asset('logo/catcha_logo.png') }}" alt="Catcha AI" class="h-6 w-6 rounded-sm shadow-sm" />
+                                <span>Session</span>
+                            </div>
                             <template x-if="conversationId">
                                 <span class="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500">#<span x-text="conversationId"></span></span>
                             </template>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button @click="clearChat()" class="text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Clear</button>
+                            <button @click="confirmClear()" class="text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Clear</button>
                             <span x-text="status" class="text-xs text-gray-500"></span>
                         </div>
                     </div>
                     <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4 text-sm">
                         <template x-for="(m,i) in messages" :key="i">
-                            <div :class="m.role==='user' ? 'text-right' : 'text-left'">
-                                <div :class="m.role==='user' ? 'inline-block bg-indigo-600 text-white' : 'inline-block bg-gray-100'" class="px-3 py-2 rounded max-w-[80%] whitespace-pre-wrap" x-text="m.content"></div>
+                            <div class="flex" :class="m.role==='user' ? 'justify-end' : 'justify-start'">
+                                <div class="flex items-start gap-2 max-w-[80%]" :class="m.role==='user' ? 'flex-row-reverse text-right' : 'flex-row'">
+                                    <template x-if="m.role==='assistant'">
+                                        <img src="{{ asset('logo/catcha_logo.png') }}" alt="AI" class="h-6 w-6 rounded-sm shadow-sm mt-0.5" />
+                                    </template>
+                                    <template x-if="m.role==='user'">
+                                        <div class="h-6 w-6 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center text-[10px] font-semibold mt-0.5 select-none">You</div>
+                                    </template>
+                                    <div :class="m.role==='user' ? 'bg-indigo-600 text-white' : 'bg-gray-100'" class="px-3 py-2 rounded whitespace-pre-wrap break-words" x-text="m.content"></div>
+                                </div>
                             </div>
                         </template>
                         <template x-if="loading">
-                            <div class="text-left">
-                                <div class="inline-block bg-gray-100 px-3 py-2 rounded animate-pulse">Thinking…</div>
+                            <div class="flex items-start gap-2">
+                                <img src="{{ asset('logo/catcha_logo.png') }}" alt="AI" class="h-6 w-6 rounded-sm shadow-sm mt-0.5" />
+                                <div class="bg-gray-100 px-3 py-2 rounded animate-pulse">Thinking…</div>
                             </div>
                         </template>
                     </div>
@@ -89,6 +109,17 @@
                             <button :disabled="loading" type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded text-sm">Send</button>
                         </div>
                     </form>
+                </div>
+            </div>
+            <!-- Confirmation Modal (moved inside x-data scope) -->
+            <div x-cloak x-show="showConfirm" class="fixed inset-0 z-50 flex items-center justify-center" style="display:none;">
+                <div class="absolute inset-0 bg-black/40" @click="cancelConfirm()"></div>
+                <div class="relative bg-white rounded shadow-lg p-5 w-full max-w-sm border" @keydown.escape.window="cancelConfirm()">
+                    <div class="text-sm mb-4" x-text="confirmMessage"></div>
+                    <div class="flex justify-end gap-2 text-xs">
+                        <button @click="cancelConfirm()" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
+                        <button @click="doConfirm()" class="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700">Confirm</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -172,7 +203,44 @@
                         });
                     }
                 },
-                clearChat(){ this.messages=[]; }
+                clearChat(){ this.messages=[]; },
+                // Confirmation modal state
+                showConfirm: false,
+                confirmMessage: '',
+                confirmProceed: null,
+                openConfirm(msg, proceed){ this.confirmMessage = msg; this.confirmProceed = proceed; this.showConfirm = true; },
+                cancelConfirm(){ this.showConfirm=false; this.confirmMessage=''; this.confirmProceed=null; },
+                doConfirm(){ if(this.confirmProceed){ const fn=this.confirmProceed; this.cancelConfirm(); fn(); } },
+                confirmClear(){
+                    if(!this.messages.length){ return; }
+                    this.openConfirm('Clear current unsent chat history? (Saved messages already stored will remain)', ()=> this.clearChat());
+                },
+                async deleteConversation(id){
+                    this.openConfirm('Delete this conversation permanently?', async () => {
+                        try {
+                            const resp = await fetch(`/ai/conversations/${id}`, {method:'DELETE', headers:{'X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content, 'Accept':'application/json'}});
+                            if(resp.ok){
+                                // capture index before removal
+                                const idxBefore = this.conversations.findIndex(c=>c.id===id);
+                                this.conversations = this.conversations.filter(c=>c.id!==id);
+                                if(this.conversationId === id){
+                                    if(this.conversations.length){
+                                        const nextIdx = idxBefore >= this.conversations.length ? this.conversations.length - 1 : idxBefore; // pick neighbor
+                                        const next = this.conversations[nextIdx];
+                                        // set conversationId early to prevent flicker, then load messages
+                                        this.conversationId = next.id;
+                                        await this.switchConversation(next.id);
+                                    } else {
+                                        this.newConversation();
+                                    }
+                                }
+                                this.status='Deleted'; setTimeout(()=>{ if(this.status==='Deleted'){ this.status=''; } }, 1500);
+                            } else {
+                                alert('Failed to delete');
+                            }
+                        } catch(e){ alert('Network error'); }
+                    });
+                }
             }
         }
     </script>
