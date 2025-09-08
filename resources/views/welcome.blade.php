@@ -26,6 +26,8 @@
             }
         </style>
     @endif
+
+    @include('partials.analytics')
 </head>
 
 <body
@@ -84,14 +86,16 @@
                         catches, Expert feedbacks, Guidance, AI chats, AI consultations. All in one focused workspace.
                     </p>
                     <div class="mt-8 flex flex-wrap items-center gap-4">
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}"
-                                class="inline-flex items-center gap-2 rounded-lg bg-sky-600 dark:bg-sky-500 text-white px-6 py-3 text-sm font-semibold shadow-sm hover:bg-sky-500 dark:hover:bg-sky-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 transition">Start
-                                Logging Catches</a>
-                        @endif
-                        <a href="{{ route('login') }}"
-                            class="inline-flex items-center gap-2 rounded-lg border border-sky-200 dark:border-sky-800 bg-white dark:bg-neutral-800 px-6 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-sky-50 dark:hover:bg-neutral-750 transition">Sign
-                            In</a>
+                        @auth
+                            <a href="{{ url('/dashboard') }}"
+                                class="inline-flex items-center gap-2 rounded-lg bg-sky-600 dark:bg-sky-500 text-white px-6 py-3 text-sm font-semibold shadow-sm hover:bg-sky-500 dark:hover:bg-sky-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 transition">
+                                Go to Dashboard
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}"
+                                class="inline-flex items-center gap-2 rounded-lg bg-sky-600 dark:bg-sky-500 text-white px-6 py-3 text-sm font-semibold shadow-sm hover:bg-sky-500 dark:hover:bg-sky-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 transition">Log
+                                In</a>
+                        @endauth
                         @auth
                             <a href="{{ route('catches.analytics') }}"
                                 class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-500 hover:to-cyan-500 text-white px-6 py-3 text-sm font-semibold shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 transition">View
@@ -99,90 +103,71 @@
                         @endauth
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <section class="mx-auto max-w-7xl px-6 pb-28">
-            {{-- <div class="mt-20 rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-gradient-to-br from-sky-50 via-white to-white dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-850 p-10 lg:p-14 flex flex-col lg:flex-row gap-10 items-center">
-                    <div class="flex-1 max-w-xl space-y-4">
-                        <h2 class="text-2xl font-semibold text-neutral-900 dark:text-white">Turn Catch Logs Into Operational Intelligence</h2>
-                        <p class="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">Your historical catch record is a predictive asset. By consolidating quantities, species composition, gear usage and temporal signals, the platform surfaces emerging opportunities & risk indicators earlier.</p>
-                        <ul class="text-xs text-neutral-600 dark:text-neutral-400 grid gap-2 sm:grid-cols-2">
-                            <li class="flex items-start gap-2"><span class="mt-0.5 h-1.5 w-1.5 rounded-full bg-sky-500"></span> 14‑day velocity snapshots</li>
-                            <li class="flex items-start gap-2"><span class="mt-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500"></span> 6‑month biomass arcs</li>
-                            <li class="flex items-start gap-2"><span class="mt-0.5 h-1.5 w-1.5 rounded-full bg-violet-500"></span> Gear ROI ratios</li>
-                            <li class="flex items-start gap-2"><span class="mt-0.5 h-1.5 w-1.5 rounded-full bg-fuchsia-500"></span> AI recommendation capture</li>
-                        </ul>
+                @if(isset($landingTotalSummary))
+                <div class="mt-14 space-y-10">
+                    <div>
+                        <h2 class="text-sm font-semibold tracking-wide text-sky-600 dark:text-sky-400 uppercase">Live Public Summary</h2>
+                        <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400 max-w-xl">An anonymized snapshot of catches recorded across the platform. Sign in for personalized analytics.</p>
                     </div>
-                    <div class="flex-1 w-full max-w-md">
-                        <div class="relative h-60 rounded-2xl bg-gradient-to-br from-sky-600 via-sky-500 to-cyan-500 dark:from-sky-700 dark:via-sky-600 dark:to-cyan-600 p-4 overflow-hidden flex items-end">
-                            <div class="absolute inset-0 opacity-20 mix-blend-overlay bg-[radial-gradient(circle_at_70%_30%,white,transparent_60%),radial-gradient(circle_at_30%_70%,white,transparent_55%)]"></div>
-                            <div class="grid grid-cols-4 gap-2 w-full text-[10px] font-mono text-white">
-                                @foreach (array_pad([], 12, null) as $i => $n)
-                                    @php $h = (int) ((($i+3)*7) % 52) + 8; @endphp
-                                    <div class="flex flex-col justify-end gap-1">
-                                        <div class="mx-auto w-full rounded bg-white/25" style="height: {{ $h }}px"></div>
-                                    </div>
-                                @endforeach
-                                <span class="col-span-4 text-[10px] tracking-wide mt-2 opacity-80">Sample Trend Visualization</span>
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 backdrop-blur shadow-sm">
+                            <div class="text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Total Catches</div>
+                            <div class="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{{ $landingTotalSummary->catches }}</div>
+                        </div>
+                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 backdrop-blur shadow-sm">
+                            <div class="text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Total Quantity (kg)</div>
+                            <div class="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{{ number_format($landingTotalSummary->total_qty, 2) }}</div>
+                        </div>
+                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 backdrop-blur shadow-sm">
+                            <div class="text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Total Count (pcs)</div>
+                            <div class="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{{ $landingTotalSummary->total_count }}</div>
+                        </div>
+                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 backdrop-blur shadow-sm">
+                            <div class="text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Avg Size (cm)</div>
+                            <div class="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{{ $landingTotalSummary->avg_size ? number_format($landingTotalSummary->avg_size,1) : '—' }}</div>
+                        </div>
+                    </div>
+                    <div class="grid gap-8 lg:grid-cols-2">
+                        <div>
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-2">Top Species (Qty)</h3>
+                            <ul class="space-y-1 text-sm">
+                                @forelse($landingTopSpecies as $row)
+                                    <li class="flex justify-between border-b border-neutral-100 dark:border-neutral-800 py-1"><span>{{ $row->species?->common_name ?? 'Unknown' }}</span><span class="text-neutral-500 dark:text-neutral-400">{{ number_format($row->qty_sum,2) }} kg</span></li>
+                                @empty
+                                    <li class="text-neutral-400 italic">No data</li>
+                                @endforelse
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-2">Last 7 Days (Qty)</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs border-separate border-spacing-y-1">
+                                    <thead>
+                                        <tr class="text-left text-neutral-500 dark:text-neutral-400">
+                                            <th class="py-1">Date</th>
+                                            <th class="py-1">Qty (kg)</th>
+                                            <th class="py-1">Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($landingDailySeries as $d)
+                                            <tr class="bg-white dark:bg-neutral-900/60 rounded">
+                                                <td class="py-1 px-1 font-medium">{{ $d->d }}</td>
+                                                <td class="py-1 px-1">{{ number_format($d->qty,2) }}</td>
+                                                <td class="py-1 px-1">{{ $d->catch_count }}</td>
+                                            </tr>
+                                        @empty
+                                            <tr><td colspan="3" class="text-neutral-400 italic py-2">No data</td></tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
-                </div> --}}
-
-            {{-- <div class="mt-20 rounded-3xl border border-sky-200 dark:border-sky-700 bg-white dark:bg-neutral-850 p-8 lg:p-12 flex flex-col md:flex-row items-center gap-10">
-                    <div class="flex-1 space-y-3">
-                        <h3 class="text-xl font-semibold text-neutral-900 dark:text-white">Ready To Elevate Your Fishery Data?</h3>
-                        <p class="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">Join now and start building a longitudinal dataset that compounds in strategic value. The earlier you centralize, the sharper your predictive edge.</p>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="inline-flex items-center rounded-lg bg-sky-600 hover:bg-sky-500 text-white px-6 py-3 text-sm font-semibold shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-850 transition">Create Account</a>
-                        @endif
-                        <a href="{{ route('login') }}" class="inline-flex items-center rounded-lg border border-sky-300 dark:border-sky-700 bg-white dark:bg-neutral-800 px-6 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-sky-50 dark:hover:bg-neutral-750 transition">Sign In</a>
-                        @auth
-                            <a href="{{ route('catches.analytics') }}" class="inline-flex items-center rounded-lg bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-500 hover:to-cyan-500 text-white px-6 py-3 text-sm font-semibold shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-850 transition">Analytics</a>
-                        @endauth
-                    </div>
-                </div> --}}
-            {{-- <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                    <div class="group rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-850 p-6 hover:shadow-sm transition">
-                        <div class="h-10 w-10 rounded-md bg-indigo-600/10 dark:bg-indigo-500/15 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-sm font-semibold">
-                            1
-                        </div>
-                        <h3 class="mt-4 font-semibold text-neutral-800 dark:text-neutral-100">
-                            Modern Stack
-                        </h3>
-                        <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                            Laravel 12, Breeze, Tailwind 3, Alpine, Vite. Fast local iteration + clean conventions.
-                        </p>
-                    </div>
-
-                    <div class="group rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-850 p-6 hover:shadow-sm transition">
-                        <div class="h-10 w-10 rounded-md bg-violet-600/10 dark:bg-violet-500/15 flex items-center justify-center text-violet-600 dark:text-violet-400 text-sm font-semibold">
-                            2
-                        </div>
-                        <h3 class="mt-4 font-semibold text-neutral-800 dark:text-neutral-100">
-                            Auth Ready
-                        </h3>
-                        <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                            Pre-wired authentication, registration, password reset flows. Extend policies and gates easily.
-                        </p>
-                    </div>
-
-                    <div class="group rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-850 p-6 hover:shadow-sm transition">
-                        <div class="h-10 w-10 rounded-md bg-fuchsia-600/10 dark:bg-fuchsia-500/15 flex items-center justify-center text-fuchsia-600 dark:text-fuchsia-400 text-sm font-semibold">
-                            3
-                        </div>
-                        <h3 class="mt-4 font-semibold text-neutral-800 dark:text-neutral-100">
-                            Scales Cleanly
-                        </h3>
-                        <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                            Encourage feature separation, test coverage, and maintainable growth from day one.
-                        </p>
-                    </div>
-                </div> --}}
-
+                </div>
+                @endif
+            </div>
         </section>
     </main>
 
