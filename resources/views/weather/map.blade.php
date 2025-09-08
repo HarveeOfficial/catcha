@@ -5,8 +5,17 @@
     <div class="py-6 bg-gray-50 min-h-screen">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
             <div class="p-4 bg-white shadow rounded border border-gray-200">
-                <p class="text-sm text-gray-600 mb-2">Click the map to load current + forecast weather (OpenWeather). Uses 5 min cache.</p>
-                <div id="map" class="w-full h-[520px] rounded bg-gray-200"></div>
+                <p class="text-sm text-gray-600 mb-3">Click the map to load current + forecast weather (OpenWeather). Uses 5 min cache.</p>
+                <div class="mb-3 flex flex-wrap gap-2 text-xs">
+                    <button id="btnDistance" class="px-3 py-1 rounded bg-indigo-500 text-white hover:bg-indigo-600">Measure Distance</button>
+                    <button id="btnArea" class="px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700">Measure Area</button>
+                    <button id="btnFinish" class="hidden px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700">Finish</button>
+                    <button id="btnClearMeasure" class="px-3 py-1 rounded bg-gray-500 text-white hover:bg-gray-600">Clear</button>
+                    <span id="measureStatus" class="text-gray-500 leading-6"></span>
+                </div>
+                <div id="map" class="relative w-full h-[520px] rounded bg-gray-200">
+                    <div id="measureTooltip" class="hidden absolute z-20 pointer-events-none bg-black/70 text-white text-[10px] px-2 py-1 rounded"></div>
+                </div>
             </div>
             <div id="mapWeatherPanel" class="hidden p-4 bg-white shadow rounded border border-gray-200 text-sm">
                 <div class="flex flex-wrap gap-6">
@@ -74,5 +83,94 @@
                 container.appendChild(el);
             });
         }
+
+        /* Measurement tools */
+        const btnDistance = document.getElementById('btnDistance');
+    const btnArea = document.getElementById('btnArea');
+    const btnFinish = document.getElementById('btnFinish');
+        const btnClear = document.getElementById('btnClearMeasure');
+        const measureStatus = document.getElementById('measureStatus');
+        const tooltip = document.getElementById('measureTooltip');
+        let mode = null; // 'distance' | 'area'
+        let tempPoints = [];
+        let tempLayer = null;
+        let overlays = [];
+
+        function haversine(lat1, lon1, lat2, lon2){
+            const R = 6371e3; // m
+            const toRad = d=> d*Math.PI/180;
+            const dLat = toRad(lat2-lat1);
+            const dLon = toRad(lon2-lon1);
+            const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+            const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R*c; // meters
+        }
+
+        function updateTooltip(latlng){
+            if(!mode || tempPoints.length===0){ tooltip.classList.add('hidden'); return; }
+            const mapPos = map.latLngToContainerPoint(latlng);
+            tooltip.style.left = mapPos.x + 12 + 'px';
+            tooltip.style.top = mapPos.y + 12 + 'px';
+            let content='';
+            if(mode==='distance'){
+                let dist=0; for(let i=1;i<tempPoints.length;i++){ const a=tempPoints[i-1], b=tempPoints[i]; dist+=haversine(a.lat,a.lng,b.lat,b.lng); }
+                content = dist>1000? (dist/1000).toFixed(2)+' km' : dist.toFixed(0)+' m';
+            } else if(mode==='area' && tempPoints.length>=3){
+                // Approx area using planar approximation (small regions) - convert to meters
+                const pts = tempPoints.map(p=>{ const latRad = p.lat*Math.PI/180; const lonRad=p.lng*Math.PI/180; return [lonRad*Math.cos(latRad), latRad]; });
+                let area=0; for(let i=0;i<pts.length;i++){ const [x1,y1]=pts[i]; const [x2,y2]=pts[(i+1)%pts.length]; area += x1*y2 - x2*y1; }
+                area = Math.abs(area)/2 * 6371e3 * 6371e3; // crude scaling
+                content = area>1e6? (area/1e6).toFixed(2)+' km²' : area.toFixed(0)+' m²';
+            }
+            tooltip.textContent = content; tooltip.classList.remove('hidden');
+        }
+
+        map.on('mousemove', e=> updateTooltip(e.latlng));
+
+        function toggleFinish(show){ btnFinish.classList.toggle('hidden', !show); }
+
+        function resetMeasurement(){
+            mode=null; tempPoints=[]; if(tempLayer){ map.removeLayer(tempLayer); tempLayer=null; }
+            tooltip.classList.add('hidden');
+            measureStatus.textContent='';
+            toggleFinish(false);
+        }
+        btnClear.addEventListener('click', resetMeasurement);
+
+        btnDistance.addEventListener('click', ()=>{ resetMeasurement(); mode='distance'; measureStatus.textContent='Click map to add points. Double-click or press Finish.'; toggleFinish(true); });
+        btnArea.addEventListener('click', ()=>{ resetMeasurement(); mode='area'; measureStatus.textContent='Click to add polygon vertices. Double-click inside or press Finish.'; toggleFinish(true); });
+        btnFinish.addEventListener('click', ()=> finalizeMeasurement());
+
+        function finalizeMeasurement(){
+            if(!mode){ return; }
+            if(mode==='distance' && tempPoints.length>=2){
+                let dist=0; for(let i=1;i<tempPoints.length;i++){ const a=tempPoints[i-1], b=tempPoints[i]; dist+=haversine(a.lat,a.lng,b.lat,b.lng); }
+                const label = dist>1000? (dist/1000).toFixed(2)+' km' : dist.toFixed(0)+' m';
+                L.marker(tempPoints[tempPoints.length-1], {icon:L.divIcon({className:'bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded shadow', html:label})}).addTo(map);
+            } else if(mode==='area' && tempPoints.length>=3){
+                const center = tempLayer.getBounds().getCenter();
+                // approximate area again
+                const pts = tempPoints.map(p=>{ const latRad = p.lat*Math.PI/180; const lonRad=p.lng*Math.PI/180; return [lonRad*Math.cos(latRad), latRad]; });
+                let area=0; for(let i=0;i<pts.length;i++){ const [x1,y1]=pts[i]; const [x2,y2]=pts[(i+1)%pts.length]; area += x1*y2 - x2*y1; }
+                area = Math.abs(area)/2 * 6371e3 * 6371e3;
+                const label = area>1e6? (area/1e6).toFixed(2)+' km²' : area.toFixed(0)+' m²';
+                L.marker(center, {icon:L.divIcon({className:'bg-green-600 text-white text-[10px] px-1.5 py-0.5 rounded shadow', html:label})}).addTo(map);
+            }
+            mode=null; tooltip.classList.add('hidden'); measureStatus.textContent='';
+        }
+
+        map.on('click', e=>{
+            if(!mode){ return; }
+            tempPoints.push(e.latlng);
+            if(tempLayer){ map.removeLayer(tempLayer); }
+            if(mode==='distance'){
+                tempLayer = L.polyline(tempPoints, {color:'#6366f1', weight:3, dashArray:'4 4'}).addTo(map).on('dblclick', e=>{ L.DomEvent.stop(e); finalizeMeasurement(); });
+            } else if(mode==='area'){
+                tempLayer = L.polygon(tempPoints, {color:'#059669', weight:2, fillColor:'#10b981', fillOpacity:0.2}).addTo(map).on('dblclick', e=>{ L.DomEvent.stop(e); finalizeMeasurement(); });
+            }
+            updateTooltip(e.latlng);
+        });
+        map.on('dblclick', e=>{ if(mode){ finalizeMeasurement(); } });
+        map.doubleClickZoom.disable();
     </script>
 </x-app-layout>

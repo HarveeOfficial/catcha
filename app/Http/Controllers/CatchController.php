@@ -46,6 +46,9 @@ class CatchController extends Controller
             'location' => 'nullable|string|max:150',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
+            'geo_accuracy_m' => 'nullable|numeric|min:0|max:50000',
+            'geo_source' => 'nullable|string|max:30',
+            'geohash' => 'nullable|string|max:16',
             'caught_at' => 'required|date',
             'quantity' => 'nullable|numeric|min:0',
             'count' => 'nullable|integer|min:0',
@@ -56,6 +59,11 @@ class CatchController extends Controller
             'notes' => 'nullable|array',
         ]);
         $data['user_id'] = Auth::id();
+
+        if (empty($data['geohash']) && isset($data['latitude'], $data['longitude'])) {
+            $data['geohash'] = $this->encodeGeohash((float) $data['latitude'], (float) $data['longitude']);
+        }
+
         FishCatch::create($data);
 
         return redirect()->route('catches.index')->with('status', 'Catch recorded');
@@ -71,5 +79,46 @@ class CatchController extends Controller
         $feedbacks = $fishCatch->feedbacks()->with('likes')->withCount('likes')->latest()->get();
 
         return view('catches.show', ['catch' => $fishCatch, 'feedbacks' => $feedbacks]);
+    }
+
+    private function encodeGeohash(float $lat, float $lon, int $precision = 10): string
+    {
+        $base32 = '0123456789bcdefghjkmnpqrstuvwxyz';
+        $latInterval = [-90.0, 90.0];
+        $lonInterval = [-180.0, 180.0];
+        $hash = '';
+        $isEven = true;
+        $bit = 0;
+        $ch = 0;
+        $bits = [16, 8, 4, 2, 1];
+        while (strlen($hash) < $precision) {
+            if ($isEven) {
+                $mid = ($lonInterval[0] + $lonInterval[1]) / 2;
+                if ($lon > $mid) {
+                    $ch |= $bits[$bit];
+                    $lonInterval[0] = $mid;
+                } else {
+                    $lonInterval[1] = $mid;
+                }
+            } else {
+                $mid = ($latInterval[0] + $latInterval[1]) / 2;
+                if ($lat > $mid) {
+                    $ch |= $bits[$bit];
+                    $latInterval[0] = $mid;
+                } else {
+                    $latInterval[1] = $mid;
+                }
+            }
+            $isEven = ! $isEven;
+            if ($bit < 4) {
+                $bit++;
+            } else {
+                $hash .= $base32[$ch];
+                $bit = 0;
+                $ch = 0;
+            }
+        }
+
+        return $hash;
     }
 }

@@ -15,7 +15,7 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*')">
+                    <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics')">
                         {{ __('Catches') }}
                     </x-nav-link>
                     <x-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
@@ -24,17 +24,17 @@
                      <x-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
                         {{ __('Seasonal Trends') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
+                        {{ __('Weather Map') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
-                        {{ __('Guidance') }}
+                        {{ __('Guides') }}
                     </x-nav-link>
                     <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
                         {{ __('AI Chat') }}
                     </x-nav-link>
                     <x-nav-link :href="route('ai.consult')" :active="request()->routeIs('ai.consult')">
                         {{ __('AI Consult') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
-                        {{ __('Weather Map') }}
                     </x-nav-link>
                     </div>
             </div>

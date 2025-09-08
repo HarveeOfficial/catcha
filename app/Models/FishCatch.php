@@ -9,7 +9,7 @@ class FishCatch extends Model
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
 
     protected $fillable = [
-        'user_id', 'species_id', 'location', 'latitude', 'longitude', 'caught_at', 'quantity', 'count', 'avg_size_cm', 'gear_type', 'vessel_name', 'environmental_data', 'notes', 'flagged', 'flag_reason',
+        'user_id', 'species_id', 'location', 'latitude', 'longitude', 'geo_accuracy_m', 'geohash', 'geo_source', 'caught_at', 'quantity', 'count', 'avg_size_cm', 'gear_type', 'vessel_name', 'environmental_data', 'notes', 'flagged', 'flag_reason',
     ];
 
     protected $casts = [
@@ -17,6 +17,9 @@ class FishCatch extends Model
         'environmental_data' => 'array',
         'notes' => 'array',
         'flagged' => 'boolean',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'geo_accuracy_m' => 'float',
     ];
 
     public function user()
