@@ -7,15 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 class FishCatch extends Model
 {
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
+
     protected $fillable = [
-        'user_id','species_id','location','caught_at','quantity','count','avg_size_cm','gear_type','vessel_name','environmental_data','notes','flagged','flag_reason'
+        'user_id', 'species_id', 'location', 'latitude', 'longitude', 'caught_at', 'quantity', 'count', 'avg_size_cm', 'gear_type', 'vessel_name', 'environmental_data', 'notes', 'flagged', 'flag_reason',
     ];
 
     protected $casts = [
         'caught_at' => 'datetime',
         'environmental_data' => 'array',
         'notes' => 'array',
-        'flagged' => 'boolean'
+        'flagged' => 'boolean',
     ];
 
     public function user()
@@ -39,9 +40,14 @@ class FishCatch extends Model
     public function getWeatherAttribute(): ?array
     {
         $env = $this->environmental_data;
-        if (!is_array($env)) return null;
-        if (empty($env['weather_json'])) return null;
+        if (! is_array($env)) {
+            return null;
+        }
+        if (empty($env['weather_json'])) {
+            return null;
+        }
         $decoded = json_decode($env['weather_json'], true);
+
         return is_array($decoded) ? $decoded : null;
     }
 }

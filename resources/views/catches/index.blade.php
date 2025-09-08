@@ -43,9 +43,10 @@
                         @forelse($catches as $c)
                             <tr class="border-b last:border-b-0">
                                 <td class="py-2 pr-4 whitespace-nowrap">
-                                    <a href="{{ route('catches.feedback.index', $c) }}" class="text-indigo-600 hover:underline">
+                                    <a href="{{ route('catches.show', $c) }}" class="text-indigo-600 hover:underline">
                                         {{ $c->caught_at->format('Y-m-d H:i') }}
                                     </a>
+                                    <div class="text-[10px]"><a href="{{ route('catches.feedback.index', $c) }}" class="text-gray-500 hover:text-gray-700 underline">Feedback</a></div>
                                 </td>
                                 @if(auth()->user()->isExpert() || auth()->user()->isAdmin())
                                     <td class="py-2 pr-4 text-xs text-gray-700">{{ optional($c->user)->name ?? '—' }}</td>
@@ -72,7 +73,7 @@
                 <!-- Mobile cards -->
                 <div class="md:hidden divide-y divide-gray-200">
                     @forelse($catches as $c)
-                        <a href="{{ route('catches.feedback.index', $c) }}" class="block py-3 group">
+                        <a href="{{ route('catches.show', $c) }}" class="block py-3 group">
                             <div class="flex items-center justify-between">
                                 <div class="text-sm font-medium text-slate-800 group-hover:text-indigo-600">{{ $c->caught_at->format('Y-m-d H:i') }}</div>
                                 <div class="text-[10px] uppercase tracking-wide text-slate-500">{{ optional($c->species)->common_name ?? '—' }}</div>
@@ -85,6 +86,7 @@
                                 @if(auth()->user()->isExpert() || auth()->user()->isAdmin())
                                     <span><span class="font-medium">Feedback:</span> {{ $c->feedbacks_count ?? $c->feedbacks()->count() }}</span>
                                 @endif
+                                <span><a href="{{ route('catches.feedback.index', $c) }}" class="underline text-indigo-600">Feedback</a></span>
                             </div>
                             @if(auth()->user()->isExpert() || auth()->user()->isAdmin())
                                 <div class="mt-1 text-[11px] text-slate-500">Fisher: {{ optional($c->user)->name ?? '—' }}</div>

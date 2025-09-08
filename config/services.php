@@ -34,7 +34,7 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-    
+
     'openweather' => [
         'key' => env('OPENWEATHER_API_KEY'),
     ],
@@ -43,6 +43,11 @@ return [
         'key' => env('OPENAI_API_KEY'),
         'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
         'timeout' => env('OPENAI_TIMEOUT', 30),
+    ],
+
+    // Simple web analytics (e.g. Google Analytics 4). Measurement ID example: G-XXXXXXXXXX
+    'analytics' => [
+        'measurement_id' => env('ANALYTICS_MEASUREMENT_ID'),
     ],
 
 ];
