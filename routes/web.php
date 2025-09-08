@@ -77,6 +77,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/ai/consult', AiConsultController::class)->name('ai.consult');
     Route::view('/ai/consult', 'ai.consult');
     Route::view('/ai/chat', 'ai.chat')->name('ai.chat');
+    // Seasonal trend endpoint (AI-assisted trend data)
+    Route::get('/ai/seasonal-trends', \App\Http\Controllers\SeasonalTrendController::class)->name('ai.seasonal-trends');
+    Route::view('/ai/seasonal-trends/view', 'ai.seasonal-trends')->name('ai.seasonal-trends.view');
     Route::get('/ai/conversations', [AiConversationController::class, 'index'])->name('ai.conversations.index');
     Route::get('/ai/conversations/{conversation}', [AiConversationController::class, 'show'])->name('ai.conversations.show');
     Route::delete('/ai/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('ai.conversations.destroy');
