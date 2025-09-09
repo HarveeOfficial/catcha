@@ -64,6 +64,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/catches', [CatchController::class, 'index'])->name('catches.index');
     Route::get('/catches/create', [CatchController::class, 'create'])->name('catches.create');
     Route::post('/catches', [CatchController::class, 'store'])->name('catches.store');
+    Route::get('/catches/{fishCatch}/edit', [CatchController::class, 'edit'])
+        ->whereNumber('fishCatch')
+        ->name('catches.edit');
+    Route::patch('/catches/{fishCatch}', [CatchController::class, 'update'])
+        ->whereNumber('fishCatch')
+        ->name('catches.update');
     // Place analytics BEFORE the parameter route to avoid being captured by {fishCatch}
     Route::get('/catches/analytics', CatchAnalyticsController::class)->name('catches.analytics');
     Route::get('/catches/{fishCatch}', [CatchController::class, 'show'])
@@ -92,6 +98,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/catches/{fishCatch}/feedback', [\App\Http\Controllers\CatchFeedbackController::class, 'index'])->name('catches.feedback.index');
     Route::post('/catches/{fishCatch}/feedback', [\App\Http\Controllers\CatchFeedbackController::class, 'store'])->name('catches.feedback.store');
     Route::delete('/feedback/{feedback}', [\App\Http\Controllers\CatchFeedbackController::class, 'destroy'])->name('catches.feedback.destroy');
+    Route::patch('/feedback/{feedback}', [\App\Http\Controllers\CatchFeedbackController::class, 'update'])->name('catches.feedback.update');
     Route::post('/feedback/{feedback}/like', [\App\Http\Controllers\CatchFeedbackController::class, 'like'])->name('catches.feedback.like');
     Route::delete('/feedback/{feedback}/like', [\App\Http\Controllers\CatchFeedbackController::class, 'unlike'])->name('catches.feedback.unlike');
 

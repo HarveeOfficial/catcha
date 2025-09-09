@@ -40,6 +40,11 @@
             </div>
             <div class="flex items-center gap-4 pt-2">
                 <a href="{{ route('catches.index') }}" class="text-sm text-indigo-600 hover:underline">&larr; Back</a>
+                @php($u = auth()->user())
+                @php($hasFeedback = $catch->feedbacks()->exists())
+                @if($u && ($u->isAdmin() || $u->isExpert() || ($u->id === $catch->user_id && ! $hasFeedback)))
+                    <a href="{{ route('catches.edit', $catch) }}" class="text-sm inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700">Edit</a>
+                @endif
             </div>
         </div>
         <div class="mt-6 bg-white shadow-sm rounded-md p-6">
@@ -54,7 +59,24 @@
                             <span>By {{ $fb->expert->name }}</span>
                             <span class="flex items-center gap-2">
                                 <span>{{ $fb->created_at->diffForHumans() }}</span>
-                                @if(auth()->id() === $fb->expert_id)
+                                @php($canEditFeedback = auth()->user()->id === $fb->expert_id || auth()->user()->isAdmin())
+                                @if($canEditFeedback)
+                                    <details class="inline-block">
+                                        <summary class="cursor-pointer text-indigo-600 hover:underline">Edit</summary>
+                                        <form method="POST" action="{{ route('catches.feedback.update', $fb) }}" class="mt-2 space-y-2">
+                                            @csrf
+                                            @method('PATCH')
+                                            <div class="flex items-center space-x-2">
+                                                <input id="approved_{{ $fb->id }}" name="approved" type="checkbox" value="1" @checked($fb->approved) class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" />
+                                                <label for="approved_{{ $fb->id }}" class="text-xs font-medium text-gray-700">Approved</label>
+                                            </div>
+                                            <textarea name="comments" rows="4" class="w-full border-gray-300 rounded-md shadow-sm text-sm">{{ old('comments', $fb->comments) }}</textarea>
+                                            <div class="flex gap-2">
+                                                <button class="px-3 py-1.5 text-xs bg-indigo-600 hover:bg-indigo-700 text-white rounded" type="submit">Save</button>
+                                                <button type="button" class="px-3 py-1.5 text-xs bg-gray-200 text-gray-800 rounded" onclick="this.closest('details').open=false">Cancel</button>
+                                            </div>
+                                        </form>
+                                    </details>
                                     <form method="POST" action="{{ route('catches.feedback.destroy',$fb) }}" onsubmit="return confirm('Delete this feedback?')">
                                         @csrf
                                         @method('DELETE')

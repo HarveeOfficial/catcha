@@ -77,7 +77,8 @@ class CatchController extends Controller
 
     public function show(FishCatch $fishCatch)
     {
-        $user = Auth::user();
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
         if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->user_id !== $user->id) {
             abort(403);
         }
@@ -85,6 +86,68 @@ class CatchController extends Controller
         $feedbacks = $fishCatch->feedbacks()->with('likes')->withCount('likes')->latest()->get();
 
         return view('catches.show', ['catch' => $fishCatch, 'feedbacks' => $feedbacks]);
+    }
+
+    public function edit(FishCatch $fishCatch)
+    {
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+        if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->user_id !== $user->id) {
+            abort(403);
+        }
+        // Once feedback exists, fishers (non expert/admin) can no longer edit
+        if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->feedbacks()->exists()) {
+            abort(403);
+        }
+        $species = Species::orderBy('common_name')->get();
+
+        return view('catches.edit', [
+            'catch' => $fishCatch,
+            'species' => $species,
+        ]);
+    }
+
+    public function update(Request $request, FishCatch $fishCatch)
+    {
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+        if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->user_id !== $user->id) {
+            abort(403);
+        }
+        // Once feedback exists, fishers (non expert/admin) can no longer edit
+        if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->feedbacks()->exists()) {
+            abort(403);
+        }
+        $data = $request->validate([
+            'species_id' => 'nullable|exists:species,id',
+            'location' => 'nullable|string|max:150',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'geo_accuracy_m' => 'nullable|numeric|min:0|max:50000',
+            'geo_source' => 'nullable|string|max:30',
+            'geohash' => 'nullable|string|max:16',
+            'caught_at' => 'required|date',
+            'quantity' => 'nullable|numeric|min:0',
+            'count' => 'nullable|integer|min:0',
+            'avg_size_cm' => 'nullable|numeric|min:0',
+            'gear_type' => 'nullable|string|max:100',
+            'vessel_name' => 'nullable|string|max:150',
+            'environmental_data' => 'nullable|array',
+            'notes' => 'nullable|array',
+        ]);
+
+        // If lat/lon provided and geohash missing, recompute
+        if ((isset($data['latitude']) && isset($data['longitude'])) && empty($data['geohash'])) {
+            $data['geohash'] = $this->encodeGeohash((float) $data['latitude'], (float) $data['longitude']);
+        }
+
+        $fishCatch->update($data);
+
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'ok']);
+        }
+
+        return redirect()->route('catches.show', $fishCatch)->with('status', 'Catch updated');
     }
 
     private function encodeGeohash(float $lat, float $lon, int $precision = 10): string

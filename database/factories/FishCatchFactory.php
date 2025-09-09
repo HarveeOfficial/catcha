@@ -18,7 +18,7 @@ class FishCatchFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
+            'user_id' => User::factory()->state(['role' => 'fisher']),
             'species_id' => Species::query()->inRandomOrder()->value('id'),
             'location' => $this->faker->city(),
             'caught_at' => Carbon::now()->subHours(rand(1,48)),

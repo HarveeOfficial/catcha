@@ -52,6 +52,24 @@ class CatchFeedbackController extends Controller
         return redirect()->route('catches.feedback.index', $catchId)->with('status','Feedback removed');
     }
 
+    public function update(Request $request, CatchFeedback $feedback)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        // Only the author expert or an admin can edit a feedback
+        if ($user->id !== $feedback->expert_id && ! $user->isAdmin()) {
+            abort(403);
+        }
+        $data = $request->validate([
+            'approved' => 'nullable|boolean',
+            'comments' => 'nullable|string',
+            'flags' => 'nullable|array',
+        ]);
+        $data['approved'] = $request->boolean('approved');
+        $feedback->update($data);
+        return back()->with('status','Feedback updated');
+    }
+
     public function like(CatchFeedback $feedback)
     {
         $userId = Auth::id();
