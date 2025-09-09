@@ -12,6 +12,9 @@
                     <button id="refreshBtn" class="px-3 py-2 bg-indigo-600 text-white rounded font-medium">Reload</button>
                 </div>
             </div>
+            <div class="flex gap-4 mb-4">
+                <button id="toggleSatellite" class="px-4 py-2 bg-blue-600 text-white rounded">Satellite View</button>
+            </div>
             <div class="text-xs text-gray-500">Intensity reflects relative catch weight (kg) or count if weight missing. No date filtering applied.</div>
             <div id="heatmap" class="w-full h-[600px] rounded border border-gray-300 overflow-hidden relative">
                 <div id="heatmapLoader" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500">Loading map…</div>
@@ -66,7 +69,24 @@
             try {
                 const map = L.map('heatmap');
                 map.setView([18.33, 121.61], 6);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OSM contributors' }).addTo(map);
+                const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OSM contributors' });
+                osmLayer.addTo(map);
+                const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19,
+                    attribution: 'Tiles © Esri'
+                });
+                let isSatellite = false;
+                document.getElementById('toggleSatellite').addEventListener('click', function() {
+                    if (isSatellite) {
+                        map.removeLayer(satelliteLayer);
+                        osmLayer.addTo(map);
+                    } else {
+                        map.removeLayer(osmLayer);
+                        satelliteLayer.addTo(map);
+                    }
+                    isSatellite = !isSatellite;
+                    this.textContent = isSatellite ? 'Standard View' : 'Satellite View';
+                });
                 let heatLayer = null;
                 const radiusInput = document.getElementById('radiusInput');
                 const blurInput = document.getElementById('blurInput');

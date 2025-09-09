@@ -7,13 +7,14 @@
             <div class="p-4 bg-white shadow rounded border border-gray-200">
                 <p class="text-sm text-gray-600 mb-3">Click the map to load current + forecast weather (OpenWeather). Uses 5 min cache.</p>
                 <div class="mb-3 flex flex-wrap gap-2 text-xs">
+                    <button id="toggleSatellite" class="px-4 py-2 bg-blue-600 text-white rounded">Satellite View</button>
                     <button id="btnDistance" class="px-3 py-1 rounded bg-indigo-500 text-white hover:bg-indigo-600">Measure Distance</button>
                     <button id="btnArea" class="px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700">Measure Area</button>
                     <button id="btnFinish" class="hidden px-3 py-1 rounded bg-amber-600 text-white hover:bg-amber-700">Finish</button>
                     <button id="btnClearMeasure" class="px-3 py-1 rounded bg-gray-500 text-white hover:bg-gray-600">Clear</button>
                     <span id="measureStatus" class="text-gray-500 leading-6"></span>
                 </div>
-                <div id="map" class="relative w-full h-[520px] rounded bg-gray-200">
+                <div id="map" class="relative w-full h-[520px] rounded bg-gray-200"></div>
                     <div id="measureTooltip" class="hidden absolute z-20 pointer-events-none bg-black/70 text-white text-[10px] px-2 py-1 rounded"></div>
                 </div>
             </div>
@@ -32,7 +33,23 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-        const map = L.map('map').setView([12.5,123.5],6);
+        // Satellite toggle logic
+        let isSatellite = false;
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('toggleSatellite');
+            btn.addEventListener('click', function() {
+                if (isSatellite) {
+                    map.removeLayer(satelliteBase);
+                    osmBase.addTo(map);
+                } else {
+                    map.removeLayer(osmBase);
+                    satelliteBase.addTo(map);
+                }
+                isSatellite = !isSatellite;
+                btn.textContent = isSatellite ? 'Standard View' : 'Satellite View';
+            });
+        });
+    const map = L.map('map').setView([12.5,123.5],6);
         // Base layers
         const osmBase = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19, attribution: '&copy; OpenStreetMap'
