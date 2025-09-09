@@ -107,39 +107,6 @@
         </script>
     @endonce
     <script>
-        // Register service worker for offline queue
-        if('serviceWorker' in navigator){
-            navigator.serviceWorker.register('/offline-service-worker.js').catch(()=>{});
-        }
-        async function tryBackgroundSync(){
-            if('serviceWorker' in navigator && 'SyncManager' in window){
-                const reg = await navigator.serviceWorker.ready;
-                try { await reg.sync.register('sync-catches'); } catch(e){ reg.active?.postMessage('flushQueue'); }
-            }
-        }
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function(){
-            const form = document.getElementById('catchForm');
-            const saveBtn = form.querySelector('button[type="submit"], .primary');
-            form.addEventListener('submit', async function(e){
-                if(navigator.onLine){ return; }
-                e.preventDefault();
-                const fd = new FormData(form);
-                // optimistic UI
-                saveBtn?.setAttribute('disabled','disabled');
-                const banner = document.createElement('div');
-                banner.className = 'mt-4 p-3 text-sm rounded bg-yellow-50 text-yellow-800 border border-yellow-200';
-                banner.textContent = 'Offline: Catch queued and will sync when connection returns.';
-                form.appendChild(banner);
-                // send to service worker (fetch interception will queue)
-                try { await fetch(form.action, { method:'POST', body: fd }); } catch(_e) {}
-                saveBtn?.removeAttribute('disabled');
-                tryBackgroundSync();
-            });
-        });
-    </script>
-    <script>
         document.addEventListener('DOMContentLoaded', function(){
             if(typeof L === 'undefined') {
                 setTimeout(function(){

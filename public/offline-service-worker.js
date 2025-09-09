@@ -42,30 +42,7 @@ async function openDB(){
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
-  // Handle POST catch create (queue offline)
-  if(request.method === 'POST' && url.pathname === '/catches'){
-    event.respondWith((async () => {
-      try {
-        const clone = request.clone();
-        const body = await clone.formData();
-        const plain = Object.fromEntries([...body.entries()]);
-        if(!self.navigator || !self.navigator.onLine){
-          await queueRequest(plain);
-          return new Response(JSON.stringify({ status:'queued-offline'}), { headers: { 'Content-Type':'application/json' }, status: 202 });
-        }
-        return await fetch(request, { headers: { 'X-Offline-Sync':'1' } });
-      } catch(err){
-        try {
-          const clone = request.clone();
-          const body = await clone.formData();
-          const plain = Object.fromEntries([...body.entries()]);
-          await queueRequest(plain);
-        } catch(_e) {}
-        return new Response(JSON.stringify({ status:'queued-offline'}), { headers: { 'Content-Type':'application/json' }, status: 202 });
-      }
-    })());
-    return;
-  }
+  // ...existing code...
   // Navigation requests: offline-first fallback
   if(request.mode === 'navigate'){
     event.respondWith((async () => {
