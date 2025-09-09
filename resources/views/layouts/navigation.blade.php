@@ -6,7 +6,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                        <img src="{{ asset('logo/catcha_logo.png') }}" alt="{{ config('app.name') }} logo" class="h-9 w-auto">
                     </a>
                 </div>
 
@@ -33,9 +33,7 @@
                     <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
                         {{ __('AI Chat') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('ai.consult')" :active="request()->routeIs('ai.consult')">
-                        {{ __('AI Consult') }}
-                    </x-nav-link>
+                    
                     <x-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
                         {{ __('Heatmap') }}
                     </x-nav-link>
@@ -109,9 +107,7 @@
             <x-responsive-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
                 {{ __('AI Chat') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('ai.consult')" :active="request()->routeIs('ai.consult')">
-                {{ __('AI Consult') }}
-            </x-responsive-nav-link>
+            
             <x-responsive-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
                 {{ __('Seasonal Trends') }}
             </x-responsive-nav-link>

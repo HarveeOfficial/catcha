@@ -57,6 +57,19 @@
                     </div>
                     <p class="mt-2 text-xs text-gray-500 leading-snug">Standard and satellite layers: OpenStreetMap & Esri. Latitude / Longitude update automatically. Geohash computed for spatial grouping.</p>
                 </div>
+                <div>
+                    <x-input-label for="weather" value="Weather" />
+                    <select id="weather" name="weather" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">-- Select Weather --</option>
+                        <option value="sunny" @selected(old('weather')==='sunny')>Sunny</option>
+                        <option value="rainy" @selected(old('weather')==='rainy')>Rainy</option>
+                        <option value="cloudy" @selected(old('weather')==='cloudy')>Cloudy</option>
+                        <option value="windy" @selected(old('weather')==='windy')>Windy</option>
+                        <option value="stormy" @selected(old('weather')==='stormy')>Stormy</option>
+                        <option value="foggy" @selected(old('weather')==='foggy')>Foggy</option>
+                    </select>
+                    <x-input-error :messages="$errors->get('weather')" class="mt-1" />
+                </div>
                 <div class="grid gap-6 md:grid-cols-3">
                     <div>
                         <x-input-label for="quantity" value="Quantity (kg)" />

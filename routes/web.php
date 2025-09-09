@@ -78,7 +78,8 @@ Route::middleware(['auth'])->group(function () {
     // Removed standalone weather page; weather now integrated into dashboard
     // AI consult endpoint
     Route::post('/ai/consult', AiConsultController::class)->name('ai.consult');
-    Route::view('/ai/consult', 'ai.consult');
+    // Redirect the old consult page to the unified chat page with the consult tab
+    Route::get('/ai/consult', function(){ return redirect()->route('ai.chat', ['tab' => 'consult']); });
     Route::view('/ai/chat', 'ai.chat')->name('ai.chat');
     // Seasonal trend endpoint (AI-assisted trend data)
     Route::get('/ai/seasonal-trends', \App\Http\Controllers\SeasonalTrendController::class)->name('ai.seasonal-trends');

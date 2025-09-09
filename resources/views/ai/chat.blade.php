@@ -1,11 +1,33 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Catcha - AI chatbot</h2>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Catcha - AI Assistant</h2>
     </x-slot>
 
-    <div class="py-6" x-data="chatApp()" x-init="loadConversations()">
+    <!-- Tabs wrapper -->
+    <div class="py-6" x-data="aiTabs()">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow rounded flex h-[70vh]">
+            <!-- Tabs -->
+            <div class="bg-white shadow rounded mb-4">
+                <div class="border-b px-4">
+                    <nav class="flex gap-2" aria-label="AI modes">
+                        <button type="button" @click="setTab('chat')"
+                            :class="tab==='chat' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-600 hover:text-gray-800'"
+                            class="-mb-px inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 8h10M7 12h6m-8 4h10"/></svg>
+                            Chat
+                        </button>
+                        <button type="button" @click="setTab('consult')"
+                            :class="tab==='consult' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-600 hover:text-gray-800'"
+                            class="-mb-px inline-flex items-center gap-2 border-b-2 px-3 py-2 text-sm font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6"/></svg>
+                            Consult
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Tab: Chat -->
+            <div x-show="tab==='chat'" x-cloak class="bg-white shadow rounded flex h-[70vh]" x-data="chatApp()" x-init="loadConversations()">
                 <!-- Sidebar -->
                 <div class="hidden sm:flex w-56 border-r flex-col" x-show="conversations.length || true">
                     <div class="px-3 py-2 border-b flex items-center justify-between">
@@ -110,15 +132,35 @@
                         </div>
                     </form>
                 </div>
+                <!-- Confirmation Modal (inside chatApp scope) -->
+                <div x-cloak x-show="showConfirm" class="fixed inset-0 z-50 flex items-center justify-center" style="display:none;">
+                    <div class="absolute inset-0 bg-black/40" @click="cancelConfirm()"></div>
+                    <div class="relative bg-white rounded shadow-lg p-5 w-full max-w-sm border" @keydown.escape.window="cancelConfirm()">
+                        <div class="text-sm mb-4" x-text="confirmMessage"></div>
+                        <div class="flex justify-end gap-2 text-xs">
+                            <button @click="cancelConfirm()" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
+                            <button @click="doConfirm()" class="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700">Confirm</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <!-- Confirmation Modal (moved inside x-data scope) -->
-            <div x-cloak x-show="showConfirm" class="fixed inset-0 z-50 flex items-center justify-center" style="display:none;">
-                <div class="absolute inset-0 bg-black/40" @click="cancelConfirm()"></div>
-                <div class="relative bg-white rounded shadow-lg p-5 w-full max-w-sm border" @keydown.escape.window="cancelConfirm()">
-                    <div class="text-sm mb-4" x-text="confirmMessage"></div>
-                    <div class="flex justify-end gap-2 text-xs">
-                        <button @click="cancelConfirm()" class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Cancel</button>
-                        <button @click="doConfirm()" class="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700">Confirm</button>
+            
+            <!-- Tab: Consult -->
+            <div x-show="tab==='consult'" x-cloak class="max-w-4xl mx-auto">
+                <div class="bg-white shadow rounded p-6">
+                    <form id="aiForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Your Question</label>
+                            <textarea id="question" class="mt-1 w-full border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500" rows="4" maxlength="2000" placeholder="Ask about fishing conditions, sustainable practices, or interpreting forecast data..." required></textarea>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm">Ask AI</button>
+                            <span id="status" class="text-sm text-gray-500"></span>
+                        </div>
+                    </form>
+                    <div id="answerBox" class="mt-6 hidden">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-2">Answer</h3>
+                        <div id="answer" class="prose max-w-none text-sm whitespace-pre-wrap"></div>
                     </div>
                 </div>
             </div>
@@ -126,6 +168,58 @@
     </div>
 
     <script>
+        function aiTabs(){
+            return {
+                tab: new URLSearchParams(window.location.search).get('tab') || 'chat',
+                init(){ this.wireConsultForm(); },
+                setTab(t){
+                    this.tab = t;
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('tab', t);
+                    history.replaceState({}, '', url);
+                    this.$nextTick?.(() => this.wireConsultForm());
+                    setTimeout(() => this.wireConsultForm(), 0);
+                },
+                wireConsultForm(){
+                    const form = document.getElementById('aiForm');
+                    if(!form || form.dataset.bound==='1'){ return; }
+                    const qEl = document.getElementById('question');
+                    const statusEl = document.getElementById('status');
+                    const answerBox = document.getElementById('answerBox');
+                    const answerEl = document.getElementById('answer');
+                    form.addEventListener('submit', async (e)=>{
+                        e.preventDefault();
+                        const question = qEl.value.trim();
+                        if(!question){return;}
+                        statusEl.textContent = 'Thinking...';
+                        answerBox.classList.add('hidden');
+                        try {
+                            const resp = await fetch("{{ route('ai.consult') }}", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
+                                },
+                                body: JSON.stringify({question})
+                            });
+                            const data = await resp.json();
+                            if(!resp.ok || data.error){
+                                statusEl.textContent = data.error || 'Error';
+                                return;
+                            }
+                            answerEl.textContent = data.answer;
+                            answerBox.classList.remove('hidden');
+                            statusEl.textContent = 'Done';
+                        } catch(err){
+                            console.error(err);
+                            statusEl.textContent = 'Request failed';
+                        }
+                    });
+                    form.dataset.bound='1';
+                }
+            }
+        }
+
         function chatApp(){
             return {
                 messages: [],

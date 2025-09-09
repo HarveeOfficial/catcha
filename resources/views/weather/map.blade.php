@@ -18,12 +18,12 @@
                     <div id="measureTooltip" class="hidden absolute z-20 pointer-events-none bg-black/70 text-white text-[10px] px-2 py-1 rounded"></div>
                 </div>
             </div>
-            <div id="mapWeatherPanel" class="hidden p-4 bg-white shadow rounded border border-gray-200 text-sm">
-                <div class="flex flex-wrap gap-6">
+            <div id="mapWeatherPanel" class="hidden mt-2 p-4 bg-white shadow rounded border border-gray-200 text-sm max-w-3xl mx-auto">
+                <div class="flex flex-wrap justify-center gap-6 text-center">
                     <div id="mwCurrent" class="space-y-1"></div>
                     <div>
                         <h4 class="font-semibold text-xs text-gray-600 mb-1">Daily</h4>
-                        <div id="mwDaily" class="flex gap-2 overflow-x-auto"></div>
+                        <div id="mwDaily" class="flex justify-center gap-2 overflow-x-auto"></div>
                     </div>
                 </div>
             </div>
