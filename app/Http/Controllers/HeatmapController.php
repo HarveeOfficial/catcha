@@ -10,21 +10,24 @@ class HeatmapController extends Controller
 {
     public function data(Request $request)
     {
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
         $base = FishCatch::query()->whereNotNull('latitude')->whereNotNull('longitude');
-        if (! $user->isExpert() && ! $user->isAdmin()) {
-            $base->where('user_id', $user->id);
-        }
-        $rows = $base->select(['latitude','longitude','quantity','count'])
+        // Guests see aggregated public data across all users. Authenticated non-experts previously
+        // saw only their own data; for public landing heatmap, expose anonymized aggregate for all.
+        // If you need to restrict for logged-in non-experts later, detect Auth::check() and filter.
+        $rows = $base->select(['latitude', 'longitude', 'quantity', 'count'])
             ->limit(10000)
             ->get()
             ->map(function ($r) {
                 $w = 1.0;
-                if (! is_null($r->quantity)) { $w = (float) $r->quantity; }
-                elseif (! is_null($r->count)) { $w = (float) $r->count; }
-                return [ (float) $r->latitude, (float) $r->longitude, $w ];
+                if (! is_null($r->quantity)) {
+                    $w = (float) $r->quantity;
+                } elseif (! is_null($r->count)) {
+                    $w = (float) $r->count;
+                }
+
+                return [(float) $r->latitude, (float) $r->longitude, $w];
             });
+
         return response()->json(['points' => $rows]);
     }
 
@@ -40,14 +43,12 @@ class HeatmapController extends Controller
             'lon' => 'required|numeric|between:-180,180',
             'zoom' => 'nullable|integer|min:1|max:20',
         ]);
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
         $lat = (float) $request->input('lat');
         $lon = (float) $request->input('lon');
         $zoom = (int) ($request->input('zoom', 8));
 
         // Derive radius km from zoom (approx) – tighter at higher zoom
-        $radiusKm = match(true) {
+        $radiusKm = match (true) {
             $zoom >= 15 => 0.25,
             $zoom === 14 => 0.5,
             $zoom === 13 => 1.0,
@@ -64,9 +65,7 @@ class HeatmapController extends Controller
         $lonDelta = $radiusKm / (111.0 * max(cos(deg2rad($lat)), 0.01));
 
         $base = FishCatch::query()->whereNotNull('latitude')->whereNotNull('longitude');
-        if (! $user->isExpert() && ! $user->isAdmin()) {
-            $base->where('user_id', $user->id);
-        }
+        // Public endpoint: aggregate across all users. If needed, introduce privacy thresholds here.
 
         $region = (clone $base)
             ->whereBetween('latitude', [$lat - $latDelta, $lat + $latDelta])
@@ -81,7 +80,7 @@ class HeatmapController extends Controller
             ->limit(15)
             ->with('species:id,common_name')
             ->get()
-            ->map(fn($r) => [
+            ->map(fn ($r) => [
                 'species_id' => $r->species_id,
                 'name' => $r->species?->common_name ?? 'Unknown',
                 'catches' => (int) $r->catches,

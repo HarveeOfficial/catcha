@@ -7,12 +7,12 @@ use App\Http\Controllers\CatchAnalyticsController;
 use App\Http\Controllers\CatchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuidanceController;
+use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicAnalyticsController;
 use App\Http\Controllers\WeatherCityController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\WeatherForecastController;
-use App\Http\Controllers\HeatmapController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -59,6 +59,11 @@ Route::get('/analytics', PublicAnalyticsController::class)->name('analytics.publ
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified'])->name('dashboard');
 
+// Public heatmap endpoints (aggregated, anonymized)
+Route::get('/catches/heatmap', [HeatmapController::class, 'view'])->name('catches.heatmap');
+Route::get('/catches/heatmap/data', [HeatmapController::class, 'data'])->name('catches.heatmap.data');
+Route::get('/catches/heatmap/point-info', [HeatmapController::class, 'pointInfo'])->name('catches.heatmap.point-info');
+
 Route::middleware(['auth'])->group(function () {
     // Catches
     Route::get('/catches', [CatchController::class, 'index'])->name('catches.index');
@@ -85,7 +90,9 @@ Route::middleware(['auth'])->group(function () {
     // AI consult endpoint
     Route::post('/ai/consult', AiConsultController::class)->name('ai.consult');
     // Redirect the old consult page to the unified chat page with the consult tab
-    Route::get('/ai/consult', function(){ return redirect()->route('ai.chat', ['tab' => 'consult']); });
+    Route::get('/ai/consult', function () {
+        return redirect()->route('ai.chat', ['tab' => 'consult']);
+    });
     Route::view('/ai/chat', 'ai.chat')->name('ai.chat');
     // Seasonal trend endpoint (AI-assisted trend data)
     Route::get('/ai/seasonal-trends', \App\Http\Controllers\SeasonalTrendController::class)->name('ai.seasonal-trends');
@@ -112,9 +119,6 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/guidances/{guidance}', [GuidanceController::class, 'destroy'])->name('guidances.destroy');
     Route::post('/guidances/{guidance}/approve', [GuidanceController::class, 'approve'])->name('guidances.approve');
     Route::post('/guidances/{guidance}/reject', [GuidanceController::class, 'reject'])->name('guidances.reject');
-    Route::get('/catches/heatmap', [HeatmapController::class, 'view'])->name('catches.heatmap');
-    Route::get('/catches/heatmap/data', [HeatmapController::class, 'data'])->name('catches.heatmap.data');
-    Route::get('/catches/heatmap/point-info', [\App\Http\Controllers\HeatmapController::class, 'pointInfo'])->name('catches.heatmap.point-info');
 });
 
 Route::middleware('auth')->group(function () {

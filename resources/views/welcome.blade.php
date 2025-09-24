@@ -31,8 +31,8 @@
 </head>
 
 <body
-    class="h-full bg-gradient-to-br from-white via-white to-slate-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 text-[#222] dark:text-neutral-100 flex flex-col">
-    <header class="w-full border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+    class="h-full bg-white text-black flex flex-col">
+    <header class="w-full border-b border-neutral-200 bg-white text-black">
         @if (Route::has('login'))
             <nav class="mx-auto max-w-7xl flex items-center justify-between px-6 py-4 lg:py-5">
 
@@ -46,12 +46,12 @@
                 <div class="flex items-center gap-4">
                     @auth
                         <a href="{{ url('/dashboard') }}"
-                            class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600 hover:bg-neutral-50 dark:hover:bg-neutral-750 transition-colors">
+                            class="inline-flex items-center gap-1 rounded-lg border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-black hover:border-neutral-300 hover:bg-neutral-50 transition-colors">
                             Dashboard
                         </a>
                     @else
                         <a href="{{ route('login') }}"
-                            class="text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
+                            class="text-sm font-medium text-black hover:text-black transition-colors">
                             Log in
                         </a>
 
@@ -70,19 +70,14 @@
 
     <main class="flex-1">
         <section class="relative">
-            <div class="absolute inset-0 pointer-events-none">
-                <div
-                    class="h-full w-full opacity-[0.15] dark:opacity-20 bg-[radial-gradient(circle_at_30%_40%,#6366f180,transparent_60%),radial-gradient(circle_at_70%_60%,#8b5cf680,transparent_55%)]">
-                </div>
-            </div>
 
             <div class="relative mx-auto max-w-7xl px-6 pt-10 pb-24 lg:pt-16 lg:pb-32">
                 <div class="max-w-3xl">
                     <span class="inline-flex items-center gap-1 rounded-full border border-sky-300/60 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-sky-700 dark:text-sky-300">CATCHA</span>
                     <h1
-                        class="mt-6 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-neutral-900 dark:text-white leading-tight">
+                        class="mt-6 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-black leading-tight">
                         CatchA: Fish Catch Monitoring and Decision Support System for Improved Fishing Practices</h1>
-                    <p class="mt-6 text-lg text-neutral-600 dark:text-neutral-300 leading-relaxed max-w-2xl">Log
+                    <p class="mt-6 text-lg text-black leading-relaxed max-w-2xl">Log
                         catches, Analyze catches, Expert feedbacks, Guides, AI chat & AI consultation, Weather forecast. All in one focused workspace.
                     </p>
                     <div class="mt-8 flex flex-wrap items-center gap-4">
@@ -107,44 +102,44 @@
                 @if(isset($landingTotalSummary))
                 <div class="mt-14 space-y-10">
                     <div>
-                        <h2 class="text-sm font-semibold tracking-wide text-sky-600 dark:text-sky-400 uppercase">Live Public Summary</h2>
-                        <p class="mt-2 text-sm text-neutral-600 dark:text-neutral-400 max-w-xl">An anonymized snapshot of catches recorded across the platform. Sign in for personalized analytics.</p>
+                        <h2 class="text-sm font-semibold tracking-wide text-black uppercase">Live Public Summary</h2>
+                        <p class="mt-2 text-sm text-black max-w-xl">An anonymized snapshot of catches recorded across the platform. Sign in for personalized analytics.</p>
                     </div>
                     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 backdrop-blur shadow-sm">
-                            <div class="text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Total Catches</div>
-                            <div class="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{{ $landingTotalSummary->catches }}</div>
+                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white backdrop-blur shadow-sm">
+                            <div class="text-[11px] font-medium uppercase tracking-wide text-black">Total Catches</div>
+                            <div class="mt-1 text-2xl font-bold text-neutral-900">{{ $landingTotalSummary->catches }}</div>
                         </div>
-                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 backdrop-blur shadow-sm">
-                            <div class="text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Total Quantity (kg)</div>
-                            <div class="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{{ number_format($landingTotalSummary->total_qty, 2) }}</div>
+                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white backdrop-blur shadow-sm">
+                            <div class="text-[11px] font-medium uppercase tracking-wide text-black">Total Quantity (kg)</div>
+                            <div class="mt-1 text-2xl font-bold text-neutral-900">{{ number_format($landingTotalSummary->total_qty, 2) }}</div>
                         </div>
-                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 backdrop-blur shadow-sm">
-                            <div class="text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Total Count (pcs)</div>
-                            <div class="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{{ $landingTotalSummary->total_count }}</div>
+                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white backdrop-blur shadow-sm">
+                            <div class="text-[11px] font-medium uppercase tracking-wide text-black">Total Count (pcs)</div>
+                            <div class="mt-1 text-2xl font-bold text-neutral-900">{{ $landingTotalSummary->total_count }}</div>
                         </div>
-                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 backdrop-blur shadow-sm">
-                            <div class="text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">Avg Size (cm)</div>
-                            <div class="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">{{ $landingTotalSummary->avg_size ? number_format($landingTotalSummary->avg_size,1) : '—' }}</div>
+                        <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white backdrop-blur shadow-sm">
+                            <div class="text-[11px] font-medium uppercase tracking-wide text-black">Avg Size (cm)</div>
+                            <div class="mt-1 text-2xl font-bold text-neutral-900">{{ $landingTotalSummary->avg_size ? number_format($landingTotalSummary->avg_size,1) : '—' }}</div>
                         </div>
                     </div>
                     <div class="grid gap-8 lg:grid-cols-2">
                         <div>
-                            <h3 class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-2">Top Species (Qty)</h3>
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-black mb-2">Top Species (Qty)</h3>
                             <ul class="space-y-1 text-sm">
                                 @forelse($landingTopSpecies as $row)
-                                    <li class="flex justify-between border-b border-neutral-100 dark:border-neutral-800 py-1"><span>{{ $row->species?->common_name ?? 'Unknown' }}</span><span class="text-neutral-500 dark:text-neutral-400">{{ number_format($row->qty_sum,2) }} kg</span></li>
+                                    <li class="flex justify-between border-b border-neutral-100 py-1"><span>{{ $row->species?->common_name ?? 'Unknown' }}</span><span class="text-black">{{ number_format($row->qty_sum,2) }} kg</span></li>
                                 @empty
                                     <li class="text-neutral-400 italic">No data</li>
                                 @endforelse
                             </ul>
                         </div>
                         <div>
-                            <h3 class="text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-2">Last 7 Days (Qty)</h3>
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-black mb-2">Last 7 Days (Qty)</h3>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-xs border-separate border-spacing-y-1">
                                     <thead>
-                                        <tr class="text-left text-neutral-500 dark:text-neutral-400">
+                                        <tr class="text-left text-black">
                                             <th class="py-1">Date</th>
                                             <th class="py-1">Qty (kg)</th>
                                             <th class="py-1">Count</th>
@@ -170,16 +165,16 @@
                     <!-- Public Heatmap Section -->
                     <section class="max-w-7xl mx-auto my-12">
                         <div class="bg-white p-4 rounded border shadow space-y-4">
-                            <h2 class="text-lg font-semibold text-gray-700 mb-2">Fishing Grounds Heatmap</h2>
-                            <p class="text-sm text-gray-600">Aggregated heatmap of ALL recorded catches (all species, all dates). Publicly viewable.</p>
+                            <h2 class="text-lg font-semibold text-black mb-2">Fishing Grounds Heatmap</h2>
+                            <p class="text-sm text-black">Aggregated heatmap of ALL recorded catches (all species, all dates). Publicly viewable.</p>
                             <div class="flex items-center gap-2 text-xs mb-2">
                                 <label>Radius <input id="radiusInput" type="range" min="10" max="50" value="22" class="align-middle" /></label>
                                 <label>Blur <input id="blurInput" type="range" min="5" max="40" value="16" class="align-middle" /></label>
                                 <button id="refreshBtn" class="px-3 py-2 bg-indigo-600 text-white rounded font-medium">Reload</button>
                             </div>
-                            <div class="text-xs text-gray-500 mb-2">Intensity reflects relative catch weight (kg) or count if weight missing. No date filtering applied.</div>
+                            <div class="text-xs text-black mb-2">Intensity reflects relative catch weight (kg) or count if weight missing. No date filtering applied.</div>
                             <div id="heatmap" class="w-full h-[600px] rounded border border-gray-300 overflow-hidden relative">
-                                <div id="heatmapLoader" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500">Loading map…</div>
+                                <div id="heatmapLoader" class="absolute inset-0 flex items-center justify-center text-xs text-black">Loading map…</div>
                             </div>
                         </div>
                     </section>
@@ -249,7 +244,7 @@
                                     map.on('click', async (e) => {
                                         const { lat, lng } = e.latlng;
                                         const url = `/catches/heatmap/point-info?lat=${lat}&lon=${lng}&zoom=${map.getZoom()}`;
-                                        const popup = L.popup({ maxWidth: 320 }).setLatLng(e.latlng).setContent('<div class="text-xs text-gray-500 p-2">Loading…</div>').openOn(map);
+                                        const popup = L.popup({ maxWidth: 320 }).setLatLng(e.latlng).setContent('<div class="text-xs text-black p-2">Loading…</div>').openOn(map);
                                         try {
                                             const res = await fetch(url, { headers: { 'Accept':'application/json' } });
                                             if(!res.ok){ throw new Error('Bad status'); }
@@ -259,16 +254,16 @@
                                             html += `<div class='mb-1'>Catches: <strong>${s.catches}</strong> | Qty: <strong>${s.total_qty.toFixed(2)}</strong> kg | Count: <strong>${s.total_count}</strong></div>`;
                                             if(data.species.length){
                                                 html += '<div class="max-h-40 overflow-auto border-t pt-1 mt-1"><table class="w-full text-[10px]">';
-                                                html += '<thead><tr class="text-gray-500"><th class="text-left">Species</th><th>Qty</th><th>Catch</th></tr></thead><tbody>';
+                                                html += '<thead><tr class="text-black"><th class="text-left">Species</th><th>Qty</th><th>Catch</th></tr></thead><tbody>';
                                                 data.species.forEach(r => { html += `<tr><td>${r.name}</td><td class='text-right'>${r.qty.toFixed(2)}</td><td class='text-right'>${r.catches}</td></tr>`; });
                                                 html += '</tbody></table></div>';
                                             } else {
-                                                html += '<div class="italic text-gray-400">No species data here.</div>';
+                                                html += '<div class="italic text-black">No species data here.</div>';
                                             }
                                             html += '</div>';
                                             popup.setContent(html);
                                         } catch(err){
-                                            popup.setContent('<div class="p-2 text-xs text-red-600">Failed to load details.</div>');
+                                            popup.setContent('<div class="p-2 text-xs text-black">Failed to load details.</div>');
                                         }
                                     });
                                     document.getElementById('refreshBtn').addEventListener('click', e => { e.preventDefault(); loadData(); });
@@ -287,17 +282,7 @@
         </section>
     </main>
 
-    <footer class="mt-auto border-t border-neutral-200 dark:border-neutral-800">
-        <div
-            class="mx-auto max-w-7xl px-6 py-8 text-xs text-neutral-500 dark:text-neutral-500 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p>&copy; {{ now()->year }} Catcha. All rights reserved.</p>
-            <div class="flex items-center gap-5">
-                <a href="#" class="hover:text-neutral-800 dark:hover:text-neutral-300 transition">Docs</a>
-                <a href="#" class="hover:text-neutral-800 dark:hover:text-neutral-300 transition">Status</a>
-                <a href="#" class="hover:text-neutral-800 dark:hover:text-neutral-300 transition">Privacy</a>
-            </div>
-        </div>
-    </footer>
+    @include('layouts.footer')
 
     @if (Route::has('login'))
         <div class="hidden"></div>
