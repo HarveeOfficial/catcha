@@ -42,9 +42,11 @@
                         <x-input-error :messages="$errors->get('longitude')" class="mt-1" />
                     </div>
                     <div class="flex items-end gap-2 flex-wrap">
-                        <button type="button" id="geoDetectBtn" class="mt-6 inline-flex px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded shadow">Use My Location</button>
+                        <button type="button" id="wayfareBtn" class="mt-6 inline-flex px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded shadow">&lt;Start Wayfare&gt;</button>
+                        {{-- <button type="button" id="geoDetectBtn" class="mt-6 inline-flex px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-medium rounded shadow">Use My Location</button> --}}
                         <button type="button" id="startWatchBtn" class="mt-6 inline-flex px-3 py-2 bg-teal-500 hover:bg-teal-600 text-white text-xs font-medium rounded shadow">Track</button>
                         <button type="button" id="clearLocationBtn" class="mt-6 inline-flex px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-medium rounded">Clear</button>
+                        <span id="wayfareStatus" class="mt-6 text-[11px] text-gray-600 hidden">Wayfare: idle</span>
                     </div>
                 </div>
                 <div>
@@ -98,6 +100,8 @@
                     <x-primary-button>{{ __('Save') }}</x-primary-button>
                     <a href="{{ route('catches.index') }}" class="text-sm text-gray-600 hover:text-gray-800">{{ __('Cancel') }}</a>
                 </div>
+                <input type="hidden" name="environmental_data[wayfare_track_json]" id="wayfare_track_json" value="">
+                <input type="hidden" name="environmental_data[wayfare_summary]" id="wayfare_summary" value="">
             </form>
         </div>
     </div>
@@ -125,7 +129,8 @@
                 setTimeout(function(){
                     if(typeof L === 'undefined') {
                         const el = document.getElementById('catchMap');
-                        if(el){ el.innerHTML = '<div class="p-4 text-sm text-red-600">Map library failed to load.</div>'; }
+                        if(el){ el.innerHTML = '<div class="p-4 text-sm text-red-600">Map unavailable offline. Geotagging still works.</div>'; }
+                        initGeoWithoutMap();
                         return;
                     }
                     initCatchMap();
@@ -134,6 +139,142 @@
                 initCatchMap();
             }
         });
+
+        // Persist current lat/lon as JSON so it survives refresh without internet
+        const posStoreKey = 'catcha.position.current';
+        function saveCurrentPositionFrom(lat, lon, accuracy, source){
+            try {
+                const payload = { lat, lon, accuracy: (accuracy ?? null), source: (source ?? null), ts: Date.now() };
+                localStorage.setItem(posStoreKey, JSON.stringify(payload));
+            } catch(e) { /* ignore quota errors */ }
+        }
+        function loadSavedPosition(){
+            try {
+                const raw = localStorage.getItem(posStoreKey);
+                if(!raw){ return null; }
+                const obj = JSON.parse(raw);
+                if(typeof obj?.lat === 'number' && typeof obj?.lon === 'number'){ return obj; }
+            } catch(e) { /* ignore */ }
+            return null;
+        }
+        function clearSavedPosition(){
+            try { localStorage.removeItem(posStoreKey); } catch(e) { /* ignore */ }
+        }
+        function saveFromInputs(){
+            const latInput = document.getElementById('latitude');
+            const lonInput = document.getElementById('longitude');
+            const accInput = document.getElementById('geo_accuracy_m');
+            const srcInput = document.getElementById('geo_source');
+            const lat = parseFloat(latInput?.value || '');
+            const lon = parseFloat(lonInput?.value || '');
+            if(Number.isFinite(lat) && Number.isFinite(lon)){
+                saveCurrentPositionFrom(lat, lon, accInput?.value ? parseFloat(accInput.value) : null, srcInput?.value || null);
+            }
+        }
+        window.addEventListener('offline', saveFromInputs);
+        window.addEventListener('beforeunload', saveFromInputs);
+
+        function initGeoWithoutMap(){
+            const latInput = document.getElementById('latitude');
+            const lonInput = document.getElementById('longitude');
+            const ghInput = document.getElementById('geohash');
+            const srcInput = document.getElementById('geo_source');
+            const accInput = document.getElementById('geo_accuracy_m');
+            const statusEl = document.getElementById('geoStatus');
+            const detectBtn = document.getElementById('geoDetectBtn');
+            const watchBtn = document.getElementById('startWatchBtn');
+            const wayfareBtn = document.getElementById('wayfareBtn');
+            const wayfareStatus = document.getElementById('wayfareStatus');
+            const clearBtn = document.getElementById('clearLocationBtn');
+            let watchId = null;
+
+            function geohashEncode(lat, lon, precision = 10){
+                const base32 = '0123456789bcdefghjkmnpqrstuvwxyz';
+                let latInterval = [-90.0, 90.0];
+                let lonInterval = [-180.0, 180.0];
+                let hash = '';
+                let isEven = true;
+                let bit = 0;
+                let ch = 0;
+                const bits = [16,8,4,2,1];
+                while(hash.length < precision){
+                    if(isEven){ const mid=(lonInterval[0]+lonInterval[1])/2; if(lon>mid){ ch|=bits[bit]; lonInterval[0]=mid; } else { lonInterval[1]=mid; } }
+                    else { const mid=(latInterval[0]+latInterval[1])/2; if(lat>mid){ ch|=bits[bit]; latInterval[0]=mid; } else { latInterval[1]=mid; } }
+                    isEven=!isEven; if(bit<4){ bit++; } else { hash+=base32[ch]; bit=0; ch=0; }
+                }
+                return hash;
+            }
+            // Attempt to restore last saved position before user acts
+            (function restore(){
+                const saved = loadSavedPosition();
+                if(saved){
+                    latInput.value = saved.lat.toFixed(6);
+                    lonInput.value = saved.lon.toFixed(6);
+                    if(saved.accuracy != null){ accInput.value = Number(saved.accuracy).toFixed(2); }
+                    if(saved.source){ srcInput.value = saved.source; }
+                    ghInput.value = geohashEncode(saved.lat, saved.lon, 10);
+                    statusEl && (statusEl.textContent = 'Restored offline coordinates');
+                }
+            })();
+
+            function updateInputs(lat, lon, opts={}){
+                latInput.value = lat.toFixed(6);
+                lonInput.value = lon.toFixed(6);
+                ghInput.value = geohashEncode(lat, lon, 10);
+                if(opts.accuracy){ accInput.value = opts.accuracy.toFixed(2); }
+                if(opts.source){ srcInput.value = opts.source; }
+                if(statusEl){ statusEl.textContent = srcInput.value ? ('Source: '+srcInput.value + (accInput.value ? ' ('+accInput.value+'m)':'') ) : ''; }
+                // persist latest
+                saveCurrentPositionFrom(lat, lon, opts.accuracy ?? (accInput.value ? parseFloat(accInput.value) : null), opts.source ?? srcInput.value);
+            }
+            detectBtn?.addEventListener('click', function(){
+                if(!navigator.geolocation){ return alert('Geolocation not supported'); }
+                detectBtn.disabled = true; const orig = detectBtn.textContent; detectBtn.textContent = 'Locating...';
+                navigator.geolocation.getCurrentPosition(pos => {
+                    detectBtn.disabled = false; detectBtn.textContent = orig;
+                    updateInputs(pos.coords.latitude, pos.coords.longitude, { accuracy: pos.coords.accuracy, source: 'html5' });
+                }, err => { detectBtn.disabled = false; detectBtn.textContent = orig; alert('Location error: ' + err.message); }, { enableHighAccuracy: true, timeout: 15000 });
+            });
+            watchBtn?.addEventListener('click', function(){
+                if(!navigator.geolocation){ return alert('Geolocation not supported'); }
+                if(watchId !== null){ navigator.geolocation.clearWatch(watchId); watchId=null; watchBtn.textContent='Track'; return; }
+                watchBtn.textContent='Stop';
+                watchId = navigator.geolocation.watchPosition(pos => { updateInputs(pos.coords.latitude, pos.coords.longitude, { accuracy: pos.coords.accuracy, source: 'watch' }); }, err => { alert('Watch error: ' + err.message); }, { enableHighAccuracy: true, maximumAge: 5000 });
+            });
+            // Minimal Wayfare without map
+            const wayfareStoreKey = 'catcha.wayfare.track';
+            const wayfareMetaKey = 'catcha.wayfare.meta';
+            const wayfare = { running:false, watchId:null, points:[], meta:{ startedAt:null, stoppedAt:null, total:0 } };
+            function updateWayfareStatus(state){
+                if(!wayfareStatus){ return; }
+                wayfareStatus.classList.remove('hidden');
+                const started = wayfare.meta.startedAt ? new Date(wayfare.meta.startedAt) : null;
+                const durationMin = started ? Math.max(0, Math.round(((wayfare.meta.stoppedAt ? new Date(wayfare.meta.stoppedAt) : new Date()) - started) / 60000)) : 0;
+                wayfareStatus.textContent = `Wayfare: ${state || (wayfare.running ? 'Running' : 'Idle')} · ${wayfare.meta.total} pts${started ? ' · ' + durationMin + 'm' : ''}`;
+            }
+            function saveWF(){ try{ localStorage.setItem(wayfareStoreKey, JSON.stringify(wayfare.points)); localStorage.setItem(wayfareMetaKey, JSON.stringify(wayfare.meta)); }catch(e){} }
+            function loadWF(){ try{ wayfare.points = JSON.parse(localStorage.getItem(wayfareStoreKey) || '[]'); wayfare.meta = JSON.parse(localStorage.getItem(wayfareMetaKey) || '{"startedAt":null,"stoppedAt":null,"total":0}'); }catch(e){ wayfare.points=[]; wayfare.meta={ startedAt:null, stoppedAt:null, total:0 }; } wayfare.meta.total = wayfare.points.length; updateWayfareStatus(); }
+            function haversine(lat1, lon1, lat2, lon2){ const toRad=d=>d*Math.PI/180; const R=6371000; const dLat=toRad(lat2-lat1); const dLon=toRad(lon2-lon1); const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2; return 2*R*Math.asin(Math.sqrt(a)); }
+            wayfareBtn?.addEventListener('click', function(){
+                if(!navigator.geolocation){ return alert('Geolocation not supported'); }
+                if(wayfare.running){ navigator.geolocation.clearWatch(wayfare.watchId); wayfare.watchId=null; wayfare.running=false; wayfare.meta.stoppedAt=new Date().toISOString(); saveWF(); wayfareBtn.textContent='<Start Wayfare>'; updateWayfareStatus('Idle'); return; }
+                wayfare.running=true; wayfare.meta.startedAt = wayfare.meta.startedAt || new Date().toISOString(); wayfare.meta.stoppedAt=null; wayfareBtn.textContent='<Stop Wayfare>'; updateWayfareStatus('Running');
+                wayfare.watchId = navigator.geolocation.watchPosition(pos => {
+                    const lat=pos.coords.latitude, lon=pos.coords.longitude, acc=pos.coords.accuracy, ts=Date.now();
+                    updateInputs(lat, lon, { accuracy: acc, source: 'wayfare' });
+                    if(acc && acc>500){ return; }
+                    const last = wayfare.points[wayfare.points.length-1];
+                    if(last){ const d=haversine(last.lat,last.lon,lat,lon); if(d<5 && ts-last.ts<15000){ return; } }
+                    wayfare.points.push({ lat, lon, acc: acc ?? null, ts }); wayfare.meta.total = wayfare.points.length; saveWF(); updateWayfareStatus('Running');
+                }, err => { alert('Wayfare error: ' + err.message); }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 20000 });
+            });
+            loadWF();
+            const form = document.getElementById('catchForm');
+            form?.addEventListener('submit', function(){
+                try{ const payload={ meta:wayfare.meta, points:wayfare.points }; document.getElementById('wayfare_track_json').value = JSON.stringify(payload); const km = (function(pts){ if(!pts||pts.length<2){return 0;} let dist=0; for(let i=1;i<pts.length;i++){ dist+=haversine(pts[i-1].lat,pts[i-1].lon,pts[i].lat,pts[i].lon);} return dist/1000; })(wayfare.points); document.getElementById('wayfare_summary').value = km ? `${km.toFixed(2)} km (${wayfare.points.length} pts)` : `${wayfare.points.length} pts`; }catch(e){}
+            });
+            clearBtn?.addEventListener('click', function(){ if(confirm('Also clear Wayfare track?')){ localStorage.removeItem(wayfareStoreKey); localStorage.removeItem(wayfareMetaKey); wayfare.points=[]; wayfare.meta={ startedAt:null, stoppedAt:null, total:0 }; updateWayfareStatus('Idle'); } clearSavedPosition(); });
+        }
 
         function geohashEncode(lat, lon, precision = 10){
             const base32 = '0123456789bcdefghjkmnpqrstuvwxyz';
@@ -168,9 +309,24 @@
             const statusEl = document.getElementById('geoStatus');
             const detectBtn = document.getElementById('geoDetectBtn');
             const watchBtn = document.getElementById('startWatchBtn');
+            const wayfareBtn = document.getElementById('wayfareBtn');
+            const wayfareStatus = document.getElementById('wayfareStatus');
             const clearBtn = document.getElementById('clearLocationBtn');
             const accLegend = document.getElementById('accuracyCircleLegend');
             let watchId = null;
+
+            // Restore saved position before initializing map center if available
+            (function restore(){
+                const saved = loadSavedPosition();
+                if(saved){
+                    latInput.value = saved.lat.toFixed(6);
+                    lonInput.value = saved.lon.toFixed(6);
+                    if(saved.accuracy != null){ accInput.value = Number(saved.accuracy).toFixed(2); }
+                    if(saved.source){ srcInput.value = saved.source; }
+                    ghInput.value = geohashEncode(saved.lat, saved.lon, 10);
+                    statusEl && (statusEl.textContent = 'Restored offline coordinates');
+                }
+            })();
 
             const defaultLat = latInput.value ? parseFloat(latInput.value) : 18.32916452647898;
             const defaultLon = lonInput.value ? parseFloat(lonInput.value) : 121.61577064268877;
@@ -198,6 +354,8 @@
                 }
                 if(opts.source){ srcInput.value = opts.source; }
                 if(statusEl){ statusEl.textContent = srcInput.value ? ('Source: '+srcInput.value + (accInput.value ? ' ('+accInput.value+'m)':'') ) : ''; }
+                // persist latest
+                saveCurrentPositionFrom(lat, lon, opts.accuracy ?? (accInput.value ? parseFloat(accInput.value) : null), opts.source ?? srcInput.value);
             }
             map.on('click', e => updateInputs(e.latlng.lat, e.latlng.lng, { source: 'click' }));
             marker.on('dragend', e => { const p = e.target.getLatLng(); updateInputs(p.lat, p.lng, { fromDrag:true, source:'drag' }); });
@@ -237,10 +395,119 @@
                     }, { enableHighAccuracy: true, maximumAge: 5000 });
                 });
             }
+            // Wayfare: offline-capable continuous logging buffered in localStorage
+            const wayfareStoreKey = 'catcha.wayfare.track';
+            const wayfareMetaKey = 'catcha.wayfare.meta';
+            const wayfare = {
+                running: false,
+                watchId: null,
+                points: [],
+                meta: { startedAt: null, stoppedAt: null, total: 0 },
+                load(){
+                    try {
+                        const raw = localStorage.getItem(wayfareStoreKey);
+                        const meta = localStorage.getItem(wayfareMetaKey);
+                        this.points = raw ? JSON.parse(raw) : [];
+                        this.meta = meta ? JSON.parse(meta) : { startedAt: null, stoppedAt: null, total: 0 };
+                    } catch(e){ this.points = []; this.meta = { startedAt:null, stoppedAt:null, total:0 }; }
+                    this.meta.total = this.points.length;
+                    updateWayfareStatus();
+                },
+                save(){
+                    try {
+                        localStorage.setItem(wayfareStoreKey, JSON.stringify(this.points));
+                        localStorage.setItem(wayfareMetaKey, JSON.stringify(this.meta));
+                    } catch(e){ /* storage may be full; ignore */ }
+                },
+                start(){
+                    if(!navigator.geolocation){ return alert('Geolocation not supported'); }
+                    if(this.running){ return; }
+                    this.running = true;
+                    this.meta.startedAt = this.meta.startedAt || new Date().toISOString();
+                    this.meta.stoppedAt = null;
+                    updateWayfareStatus('Running');
+                    wayfareBtn.textContent = '<Stop Wayfare>';
+                    wayfareBtn.classList.remove('bg-emerald-600','hover:bg-emerald-700');
+                    wayfareBtn.classList.add('bg-red-600','hover:bg-red-700');
+                    this.watchId = navigator.geolocation.watchPosition(pos => {
+                        const lat = pos.coords.latitude;
+                        const lon = pos.coords.longitude;
+                        const acc = pos.coords.accuracy;
+                        const ts = Date.now();
+                        // Update inputs with latest position
+                        updateInputs(lat, lon, { accuracy: acc, source: 'wayfare' });
+                        if(acc && acc > 500){ return; } // skip very inaccurate points
+                        const last = this.points[this.points.length - 1];
+                        if(last){
+                            const d = haversine(last.lat, last.lon, lat, lon);
+                            if(d < 5 && ts - last.ts < 15000){ return; } // skip near-duplicates (<5m or <15s)
+                        }
+                        this.points.push({ lat, lon, acc: acc ?? null, ts });
+                        this.meta.total = this.points.length;
+                        this.save();
+                        updateWayfareStatus('Running');
+                    }, err => {
+                        alert('Wayfare error: ' + err.message);
+                        this.stop();
+                    }, { enableHighAccuracy: true, maximumAge: 3000, timeout: 20000 });
+                },
+                stop(){
+                    if(this.watchId !== null){ navigator.geolocation.clearWatch(this.watchId); this.watchId = null; }
+                    this.running = false;
+                    this.meta.stoppedAt = new Date().toISOString();
+                    this.save();
+                    wayfareBtn.textContent = '<Start Wayfare>';
+                    wayfareBtn.classList.remove('bg-red-600','hover:bg-red-700');
+                    wayfareBtn.classList.add('bg-emerald-600','hover:bg-emerald-700');
+                    updateWayfareStatus('Idle');
+                },
+                clear(){ this.points = []; this.meta = { startedAt: null, stoppedAt: null, total: 0 }; this.save(); updateWayfareStatus('Idle'); }
+            };
+            function updateWayfareStatus(state){
+                if(!wayfareStatus){ return; }
+                wayfareStatus.classList.remove('hidden');
+                const started = wayfare.meta.startedAt ? new Date(wayfare.meta.startedAt) : null;
+                const durationMin = started ? Math.max(0, Math.round(((wayfare.meta.stoppedAt ? new Date(wayfare.meta.stoppedAt) : new Date()) - started) / 60000)) : 0;
+                wayfareStatus.textContent = `Wayfare: ${state || (wayfare.running ? 'Running' : 'Idle')} · ${wayfare.meta.total} pts${started ? ' · ' + durationMin + 'm' : ''}`;
+            }
+            function haversine(lat1, lon1, lat2, lon2){
+                const toRad = d => d * Math.PI / 180;
+                const R = 6371000;
+                const dLat = toRad(lat2-lat1); const dLon = toRad(lon2-lon1);
+                const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+                return 2 * R * Math.asin(Math.sqrt(a));
+            }
+            if(wayfareBtn){
+                wayfare.load();
+                wayfareBtn.addEventListener('click', function(){
+                    if(wayfare.running){ wayfare.stop(); } else { wayfare.start(); }
+                });
+            }
+            // Attach track to form on submit so it is saved with the catch
+            const form = document.getElementById('catchForm');
+            form?.addEventListener('submit', function(){
+                try {
+                    const payload = { meta: wayfare.meta, points: wayfare.points };
+                    document.getElementById('wayfare_track_json').value = JSON.stringify(payload);
+                    const km = summarizeTrack(wayfare.points);
+                    document.getElementById('wayfare_summary').value = km ? `${km.toFixed(2)} km (${wayfare.points.length} pts)` : `${wayfare.points.length} pts`;
+                } catch(e){ /* ignore */ }
+            });
+            function summarizeTrack(points){
+                if(!points || points.length < 2){ return 0; }
+                let dist = 0;
+                for(let i=1;i<points.length;i++){
+                    dist += haversine(points[i-1].lat, points[i-1].lon, points[i].lat, points[i].lon);
+                }
+                return dist/1000; // km
+            }
             if(clearBtn){
                 clearBtn.addEventListener('click', function(){
                     latInput.value=''; lonInput.value=''; ghInput.value=''; srcInput.value=''; accInput.value=''; marker.setOpacity(0.4); if(accuracyCircle){ accuracyCircle.remove(); accuracyCircle=null; }
                     statusEl.textContent=''; accLegend.classList.add('hidden');
+                    // Also clear any Wayfare track if user desires a reset
+                    if(confirm('Also clear Wayfare track?')){ localStorage.removeItem(wayfareStoreKey); localStorage.removeItem(wayfareMetaKey); if(wayfare){ wayfare.clear?.(); } }
+                    clearSavedPosition();
                 });
             }
             setTimeout(()=>{ map.invalidateSize(); }, 400);
