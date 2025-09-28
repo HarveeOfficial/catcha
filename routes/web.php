@@ -119,6 +119,14 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/guidances/{guidance}', [GuidanceController::class, 'destroy'])->name('guidances.destroy');
     Route::post('/guidances/{guidance}/approve', [GuidanceController::class, 'approve'])->name('guidances.approve');
     Route::post('/guidances/{guidance}/reject', [GuidanceController::class, 'reject'])->name('guidances.reject');
+
+    // AI Suggestions (cached per subject)
+    Route::get('/ai/suggestions/catches/{fishCatch}', [\App\Http\Controllers\AiSuggestionController::class, 'showCatch'])
+        ->whereNumber('fishCatch')
+        ->name('ai.suggestions.catches.show');
+    Route::post('/ai/suggestions/catches/{fishCatch}', [\App\Http\Controllers\AiSuggestionController::class, 'generateCatch'])
+        ->whereNumber('fishCatch')
+        ->name('ai.suggestions.catches.generate');
 });
 
 Route::middleware('auth')->group(function () {
