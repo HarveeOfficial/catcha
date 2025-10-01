@@ -50,4 +50,9 @@ return [
         'measurement_id' => env('ANALYTICS_MEASUREMENT_ID'),
     ],
 
+    // First-party API token for mobile clients
+    'api' => [
+        'token' => env('API_TOKEN'),
+    ],
+
 ];

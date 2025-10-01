@@ -59,3 +59,40 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+---
+
+## Live Tracking (Beta)
+
+Your mobile app can send real-time GPS points to visualize a moving path on the website.
+
+- Create a track (auth required): POST `/live-tracks`
+	- Response: `{ publicId, writeKey, ingestUrl, pollUrl, mapUrl }`
+- Push points: POST `/live-tracks/{publicId}/points`
+	- Headers: `X-Track-Key: <writeKey>`
+	- Body JSON: `{ lat, lng, accuracy?, speed?, bearing?, t? }`
+- Public map: GET `/live-tracks/{publicId}`
+- Poll points: GET `/live-tracks/{publicId}/points?since=<ISO8601>`
+
+Ending a track
+
+- End explicitly: POST `/live-tracks/{publicId}/end`
+	- Headers: `X-Track-Key: <writeKey>`
+	- Effect: sets `is_active=false`, `ended_at=now()`.
+
+Active vs idle
+
+- The API returns `track.isActive` as an effective state: it is true only if `is_active=true`, `ended_at` is null, and the last received point is within the last 5 minutes. Otherwise the track is treated as idle/inactive for the UI even if not explicitly ended.
+
+## Mobile API Auth (Sanctum)
+
+- Login: POST `/api/login` with `{ email, password, device_name? }` → `{ token, user }`
+- Logout: POST `/api/logout` with `Authorization: Bearer <token>`
+- Current user: GET `/api/user` with `Authorization: Bearer <token>`
+
+Protected endpoints (require `Authorization: Bearer <token>`):
+
+- POST `/api/live-tracks` (create a track; associates to current user)
+- POST `/api/live-tracks/{publicId}/points` (ingest point; also requires `X-Track-Key` header)
+- POST `/api/live-tracks/{publicId}/end` (end track; also requires `X-Track-Key` header)
+

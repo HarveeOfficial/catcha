@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuidanceController;
 use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\LiveTrackController;
 use App\Http\Controllers\PublicAnalyticsController;
 use App\Http\Controllers\WeatherCityController;
 use App\Http\Controllers\WeatherController;
@@ -127,6 +128,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/ai/suggestions/catches/{fishCatch}', [\App\Http\Controllers\AiSuggestionController::class, 'generateCatch'])
         ->whereNumber('fishCatch')
         ->name('ai.suggestions.catches.generate');
+
+    // Live tracking: create a new track (returns publicId + writeKey)
+    Route::get('/live-tracks', [LiveTrackController::class, 'index'])
+        ->middleware('can:viewLiveTracksAdmin')
+        ->name('live-tracks.index');
+    Route::post('/live-tracks', [LiveTrackController::class, 'create'])->name('live-tracks.create');
 });
 
 Route::middleware('auth')->group(function () {
@@ -136,3 +143,11 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// Public live track endpoints
+Route::get('/live-tracks/active', [LiveTrackController::class, 'activeMap'])->name('live-tracks.active');
+Route::get('/live-tracks/active/points', [LiveTrackController::class, 'activePoints'])->name('live-tracks.active.points');
+Route::get('/live-tracks/{publicId}', [LiveTrackController::class, 'show'])->name('live-tracks.show');
+Route::get('/live-tracks/{publicId}/points', [LiveTrackController::class, 'pointsIndex'])->name('live-tracks.points.index');
+Route::post('/live-tracks/{publicId}/points', [LiveTrackController::class, 'pointsStore'])->name('live-tracks.points.store');
+Route::post('/live-tracks/{publicId}/end', [LiveTrackController::class, 'end'])->name('live-tracks.end');

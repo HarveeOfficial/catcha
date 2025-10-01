@@ -24,19 +24,28 @@
                      <x-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
                         {{ __('Seasonal Trends') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
-                        {{ __('Weather Map') }}
-                    </x-nav-link>
+                    @unless(auth()->check() && auth()->user()->role === 'admin')
+                        <x-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
+                            {{ __('Weather Map') }}
+                        </x-nav-link>
+                    @endunless
                     <x-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
                         {{ __('Guides') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
-                        {{ __('AI Chat') }}
-                    </x-nav-link>
+                    @unless(auth()->check() && auth()->user()->role === 'admin')
+                        <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
+                            {{ __('AI Chat') }}
+                        </x-nav-link>
+                    @endunless
                     
                     <x-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
                         {{ __('Heatmap') }}
                     </x-nav-link>
+                    @can('viewLiveTracksAdmin')
+                        <x-nav-link :href="route('live-tracks.index')" :active="request()->routeIs('live-tracks.*')">
+                            {{ __('Live Track') }}
+                        </x-nav-link>
+                    @endcan
                     </div>
             </div>
 
@@ -125,6 +134,11 @@
             <x-responsive-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
                 {{ __('Heatmap') }}
             </x-responsive-nav-link>
+            @can('viewLiveTracksAdmin')
+                <x-responsive-nav-link :href="route('live-tracks.index')" :active="request()->routeIs('live-tracks.*')">
+                    {{ __('Live Track') }}
+                </x-responsive-nav-link>
+            @endcan
         </div>
 
         <!-- Responsive Settings Options -->
