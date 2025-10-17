@@ -294,4 +294,24 @@ class LiveTrackController extends Controller
             'endedAt' => optional($track->ended_at)?->toIso8601String(),
         ]);
     }
+
+    /**
+     * Admin: forcibly end a live track by id (web form).
+     */
+    public function adminEnd(Request $request, int $track): RedirectResponse
+    {
+        $this->authorize('viewLiveTracksAdmin');
+
+        $t = LiveTrack::query()->where('id', $track)->firstOrFail();
+        if (! $t->is_active && $t->ended_at !== null) {
+            return back()->with('status','Track already ended');
+        }
+
+        $t->forceFill([
+            'is_active' => false,
+            'ended_at' => now(),
+        ])->save();
+
+        return back()->with('status','Track closed');
+    }
 }

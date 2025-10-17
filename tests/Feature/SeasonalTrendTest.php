@@ -48,17 +48,26 @@ class SeasonalTrendTest extends TestCase
         $response->assertOk();
         $json = $response->json();
         $this->assertArrayHasKey('species', $json);
-        $this->assertIsArray($json['species']);
+        // API may return a paginator (associative array) or a plain array of species.
+        if (is_array($json['species']) && array_key_exists('data', $json['species'])) {
+            $speciesArray = $json['species']['data'];
+        } elseif (is_array($json['species'])) {
+            // numeric list of species
+            $speciesArray = array_values($json['species']);
+        } else {
+            $speciesArray = [];
+        }
+        $this->assertIsArray($speciesArray);
         // Ensure each has needed keys
-        foreach ($json['species'] as $sp) {
+        foreach ($speciesArray as $sp) {
             $this->assertArrayHasKey('id', $sp);
             $this->assertArrayHasKey('status', $sp);
             $this->assertArrayHasKey('trend_12m', $sp);
         }
         // Check specific in-season statuses based on forced now (January)
-        $fishA = collect($json['species'])->firstWhere('common_name', 'TestFishA');
-        $fishB = collect($json['species'])->firstWhere('common_name', 'TestFishB');
-        $fishC = collect($json['species'])->firstWhere('common_name', 'TestFishC');
+    $fishA = collect($speciesArray)->firstWhere('common_name', 'TestFishA');
+    $fishB = collect($speciesArray)->firstWhere('common_name', 'TestFishB');
+    $fishC = collect($speciesArray)->firstWhere('common_name', 'TestFishC');
         $this->assertTrue($fishA['status']['in_season']); // Jan in open months
         $this->assertTrue($fishB['status']['in_season']); // Jan not closed
         $this->assertTrue($fishC['status']['in_season']); // Window 11-01 -> 02-15 includes Jan

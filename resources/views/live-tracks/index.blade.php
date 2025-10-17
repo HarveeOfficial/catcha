@@ -54,7 +54,17 @@
                                         <span class="inline-flex items-center px-2 py-0.5 text-xs rounded bg-gray-100 text-gray-800">Ended</span>
                                     @endif
                                 </td>
-                                <td class="px-2 py-2"><a class="text-blue-600 underline" href="{{ route('live-tracks.show', $t->public_id) }}" target="_blank">Open</a></td>
+                                <td class="px-2 py-2 flex items-center gap-2">
+                                    <a class="text-blue-600 underline" href="{{ route('live-tracks.show', $t->public_id) }}" target="_blank">Open</a>
+                                    @can('viewLiveTracksAdmin')
+                                        @if($t->is_active)
+                                            <form method="POST" action="{{ route('live-tracks.admin-end', $t->id) }}" onsubmit="return confirm('Close this live track? This will mark it as ended.')">
+                                                @csrf
+                                                <button type="submit" class="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700">Close</button>
+                                            </form>
+                                        @endif
+                                    @endcan
+                                </td>
                             </tr>
                         @empty
                             <tr><td class="px-2 py-4 text-gray-500" colspan="5">No tracks yet.</td></tr>

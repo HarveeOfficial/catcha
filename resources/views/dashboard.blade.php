@@ -7,46 +7,91 @@
 
     <div class="py-6 bg-gray-50 min-h-screen">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="grid gap-6 md:grid-cols-3">
-                <div class="p-4 bg-white shadow rounded border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600">Recent Catches</h3>
-                    <ul class="mt-2 space-y-1 text-sm max-h-48 overflow-auto">
-                        @forelse($recentCatches as $c)
-                            <li class="flex justify-between">
-                                <span>{{ $c->species?->common_name ?? 'Unknown' }}</span>
-                                <span class="text-gray-500">{{ $c->quantity }} pcs</span>
-                            </li>
-                        @empty
-                            <li class="text-gray-400 italic">None yet</li>
-                        @endforelse
-                    </ul>
-                </div>
-                <div class="p-4 bg-white shadow rounded border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600">Monthly Totals (qty)</h3>
-                    <ul class="mt-2 space-y-1 text-sm">
-                        @foreach($monthlyTotals as $m)
-                            <li class="flex justify-between">
-                                <span>{{ $m->ym }}</span>
-                                <span class="text-gray-500">{{ $m->total_qty }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-                <div class="p-4 bg-white shadow rounded border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600">Active Guidances</h3>
-                    <ul class="mt-2 space-y-1 text-sm max-h-48 overflow-auto">
-                        @forelse($activeGuidances as $g)
-                            <li class="flex justify-between">
-                                <span class="truncate" title="{{ $g->title }}">{{ Str::limit($g->title,28) }}</span>
-                                <span class="text-gray-400">#{{ $g->id }}</span>
-                            </li>
-                        @empty
-                            <li class="text-gray-400 italic">No active guidance</li>
-                        @endforelse
-                    </ul>
-                </div>
-            </div>
+            @if($showAdmin)
+                <div class="grid gap-6 md:grid-cols-4">
+                    <a href="{{ route('catches.analytics') }}" class="block p-4 bg-white shadow rounded border border-gray-200 hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300" aria-labelledby="card-site-totals">
+                        <h3 id="card-site-totals" class="text-sm font-semibold text-gray-600">Site Totals</h3>
+                        @if($siteTotals)
+                            <div class="mt-3 text-lg font-bold">{{ number_format($siteTotals->total_qty,2) }} kg</div>
+                            <div class="text-xs text-gray-500">{{ $siteTotals->catches }} catches • {{ $siteTotals->total_count }} pcs</div>
+                        @else
+                            <div class="text-gray-400 italic">No data</div>
+                        @endif
+                    </a>
 
+                    {{-- <a href="{{ route('profile.edit') }}" class="block p-4 bg-white shadow rounded border border-gray-200 hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300" aria-labelledby="card-users">
+                        <h3 id="card-users" class="text-sm font-semibold text-gray-600">Users</h3>
+                        <div class="mt-3 text-lg font-bold">{{ $userCount ?? '—' }}</div>
+                        <div class="text-xs text-gray-500">Registered users</div>
+                    </a> --}}
+
+                    <a href="{{ route('catches.index') }}" class="block p-4 bg-white shadow rounded border border-gray-200 hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300" aria-labelledby="card-species">
+                        <h3 id="card-species" class="text-sm font-semibold text-gray-600">Species</h3>
+                        <div class="mt-3 text-lg font-bold">{{ $speciesCount ?? '—' }}</div>
+                        <div class="text-xs text-gray-500">Species in catalogue</div>
+                    </a>
+
+                    <a href="{{ route('guidances.index') }}" class="block p-4 bg-white shadow rounded border border-gray-200 hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300" aria-labelledby="card-pending-guidances">
+                        <h3 id="card-pending-guidances" class="text-sm font-semibold text-gray-600">Pending Guidances</h3>
+                        @if($pendingGuidances && $pendingGuidances->isNotEmpty())
+                            <ul class="mt-2 space-y-1 text-sm max-h-48 overflow-auto">
+                                @foreach($pendingGuidances as $pg)
+                                    <li class="flex justify-between"><span class="truncate" title="{{ $pg->title }}">{{ Str::limit($pg->title,28) }}</span><span class="text-gray-400">#{{ $pg->id }}</span></li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <div class="text-gray-400 italic mt-2">No pending guidances</div>
+                        @endif
+                    </a>
+                </div>
+            @else
+                @if(auth()->user()?->isExpert())
+                    <div class="mb-3 text-sm">
+                        <a href="?view=admin" class="text-sky-600">View admin dashboard</a>
+                    </div>
+                @endif
+                <div class="grid gap-6 md:grid-cols-3">
+                    <div class="p-4 bg-white shadow rounded border border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-600">Recent Catches</h3>
+                        <ul class="mt-2 space-y-1 text-sm max-h-48 overflow-auto">
+                            @forelse($recentCatches as $c)
+                                <li class="flex justify-between">
+                                    <span>{{ $c->species?->common_name ?? 'Unknown' }}</span>
+                                    <span class="text-gray-500">{{ $c->quantity }} pcs</span>
+                                </li>
+                            @empty
+                                <li class="text-gray-400 italic">None yet</li>
+                            @endforelse
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-white shadow rounded border border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-600">Monthly Totals (qty)</h3>
+                        <ul class="mt-2 space-y-1 text-sm">
+                            @foreach($monthlyTotals as $m)
+                                <li class="flex justify-between">
+                                    <span>{{ $m->ym }}</span>
+                                    <span class="text-gray-500">{{ $m->total_qty }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <div class="p-4 bg-white shadow rounded border border-gray-200">
+                        <h3 class="text-sm font-semibold text-gray-600">Active Guidances</h3>
+                        <ul class="mt-2 space-y-1 text-sm max-h-48 overflow-auto">
+                            @forelse($activeGuidances as $g)
+                                <li class="flex justify-between">
+                                    <span class="truncate" title="{{ $g->title }}">{{ Str::limit($g->title,28) }}</span>
+                                    <span class="text-gray-400">#{{ $g->id }}</span>
+                                </li>
+                            @empty
+                                <li class="text-gray-400 italic">No active guidance</li>
+                            @endforelse
+                        </ul>
+                    </div>
+                </div>
+            @endif
+
+            @unless($showAdmin)
             <div id="weather" class="p-4 bg-white shadow rounded border border-gray-200">
                 <h3 class="text-sm font-semibold text-gray-700 mb-3">Weather (Current & 5 Day Forecast)</h3>
                 <div class="flex flex-wrap gap-4 items-start">
@@ -97,6 +142,7 @@
                     </div>
                 </div>
             </div>
+            @endunless
         </div>
     </div>
 

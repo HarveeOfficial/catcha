@@ -40,6 +40,24 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        return view('dashboard', compact('recentCatches','monthlyTotals','activeGuidances'));
+        // Admin view toggle: admins always see it; experts can opt-in via ?view=admin
+        $siteTotals = null;
+        $userCount = null;
+        $speciesCount = null;
+        $pendingGuidances = null;
+        $user = Auth::user();
+        $showAdmin = false;
+        if ($user) {
+            $showAdmin = $user->isAdmin() || ($user->isExpert() && request()->input('view') === 'admin');
+        }
+
+        if ($showAdmin) {
+            $siteTotals = FishCatch::selectRaw('COUNT(*) as catches, COALESCE(SUM(quantity),0) as total_qty, COALESCE(SUM(`count`),0) as total_count')->first();
+            $userCount = \App\Models\User::count();
+            $speciesCount = \App\Models\Species::count();
+            $pendingGuidances = Guidance::where('active', false)->orderBy('id')->limit(10)->get();
+        }
+
+        return view('dashboard', compact('recentCatches','monthlyTotals','activeGuidances','siteTotals','userCount','speciesCount','pendingGuidances','showAdmin'));
     }
 }

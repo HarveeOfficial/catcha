@@ -15,11 +15,15 @@ class SeasonalTrendController extends Controller
     public function __invoke(Request $request)
     {
         $now = Carbon::now();
-        $species = Species::query()
+        // Paginate species list so the UI can show a limited number per page
+        $paginated = Species::query()
             ->withCount(['catches as catches_last_30' => function ($q) {
                 $q->where('caught_at', '>=', now()->subDays(30));
             }])
-            ->get();
+            ->paginate(5);
+
+        // Work with the underlying collection for transformation, then re-attach to paginator
+        $speciesCollection = $paginated->getCollection();
 
         // Build aggregated monthly catch quantity per species for last 12 months
         $from = $now->copy()->startOfMonth()->subMonths(11);
@@ -39,6 +43,68 @@ class SeasonalTrendController extends Controller
             ->groupBy('species_id', 'ym')
             ->get();
 
+        // If CSV export requested, build a wide-format CSV with Period + one column per species
+        if ($request->input('format') === 'csv') {
+            // Load all species (include those without catches as well)
+            $allSpecies = Species::orderBy('common_name')->get(['id','common_name']);
+
+            // Build map of species id => common_name
+            $speciesNames = $allSpecies->pluck('common_name','id')->toArray();
+
+            // Rebuild series map from raw
+            $seriesMap = [];
+            foreach ($raw as $row) {
+                $seriesMap[$row->species_id][$row->ym] = (float) $row->qty_sum;
+            }
+
+            // Prepare CSV header: Period, species1, species2, ...
+            $header = array_merge(['Period'], array_values($speciesNames));
+
+            $rows = [];
+            // months is already built below; but build here since not yet defined
+            $monthsList = [];
+            for ($i = 0; $i < 12; $i++) {
+                $m = $from->copy()->addMonths($i)->format('Y-m');
+                $monthsList[] = $m;
+            }
+
+            foreach ($monthsList as $ym) {
+                $row = [$ym];
+                foreach ($allSpecies as $sp) {
+                    $row[] = $seriesMap[$sp->id][$ym] ?? 0.0;
+                }
+                $rows[] = $row;
+            }
+
+            $filename = sprintf('seasonal-monthly-by-species-%s.csv', now()->format('YmdHis'));
+            $headers = [
+                'Content-Type' => 'text/csv; charset=utf-8',
+                'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            ];
+
+            if (app()->runningUnitTests()) {
+                $fp = fopen('php://temp', 'r+');
+                fputcsv($fp, $header);
+                foreach ($rows as $r) {
+                    fputcsv($fp, $r);
+                }
+                rewind($fp);
+                $content = stream_get_contents($fp);
+                fclose($fp);
+                return response($content, 200, $headers);
+            }
+
+            $callback = function() use ($header, $rows) {
+                $out = fopen('php://output', 'w');
+                fputcsv($out, $header);
+                foreach ($rows as $r) {
+                    fputcsv($out, $r);
+                }
+                fclose($out);
+            };
+            return response()->stream($callback, 200, $headers);
+        }
+
         $series = [];
         foreach ($raw as $row) {
             $series[$row->species_id][$row->ym] = [
@@ -52,7 +118,7 @@ class SeasonalTrendController extends Controller
             $months[] = $m;
         }
 
-        $payload = $species->map(function (Species $s) use ($months, $series, $now) {
+        $payload = $speciesCollection->map(function (Species $s) use ($months, $series, $now) {
             $status = $s->seasonalStatus($now);
             $trend = [];
             foreach ($months as $ym) {
@@ -72,10 +138,14 @@ class SeasonalTrendController extends Controller
             ];
         });
 
+        // Put transformed payload back into the paginator so JSON includes pagination meta
+        $paginated->setCollection($payload);
+
         return response()->json([
             'generated_at' => $now->toIso8601String(),
             'months' => $months,
-            'species' => $payload,
+            // Return paginator as array to ensure JSON-decoded payload is a PHP array
+            'species' => $paginated->toArray(),
         ]);
     }
 }

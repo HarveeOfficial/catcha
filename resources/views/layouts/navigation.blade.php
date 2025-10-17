@@ -28,11 +28,11 @@
                         <x-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
                             {{ __('Weather Map') }}
                         </x-nav-link>
-                    @endunless
+                   
                     <x-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
                         {{ __('Guides') }}
                     </x-nav-link>
-                    @unless(auth()->check() && auth()->user()->role === 'admin')
+                    
                         <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
                             {{ __('AI Chat') }}
                         </x-nav-link>

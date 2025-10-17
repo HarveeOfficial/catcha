@@ -13,6 +13,7 @@
                     </div>
                     <div class="flex items-center gap-2 text-xs">
                         <button @click="load()" class="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50" :disabled="loading">Refresh</button>
+                        <a :href="'{{ route('ai.seasonal-trends') }}?format=csv'" class="px-3 py-1 rounded border text-sky-600 hover:bg-sky-50">Download CSV</a>
                         <div x-show="loading" class="flex items-center gap-1 text-gray-500">
                             <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" class="opacity-25"/><path d="M12 2a10 10 0 0 1 10 10" class="opacity-75"/></svg>
                             Loading...
@@ -43,7 +44,7 @@
                                     <td class="py-2 pr-4">
                                         <div class="flex items-end gap-0.5 h-12">
                                             <template x-for="point in sp.trend_12m" :key="point.month">
-                                                <div class="flex flex-col justify-end w-2" :title="point.month+' qty '+point.qty.toFixed(2)">
+                                                <div class="flex flex-col justify-end w-2" :title="point.month + ' ' + point.qty.toFixed(2) + ' kg '">
                                                     <div class="bg-indigo-500/70 hover:bg-indigo-600 transition rounded-t" :style="'height:'+barHeight(sp.trend_12m, point.qty)+'px'"></div>
                                                 </div>
                                             </template>
@@ -59,8 +60,28 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="text-[11px] text-gray-500 leading-relaxed">
+                <div class="flex items-center justify-between">
+                    <div class="text-[11px] text-gray-500 leading-relaxed max-w-prose">
                     Interpretation: "In Season" is determined by configured open months/windows. Trend bars show relative monthly total quantity (not scaled across species). For cross-species comparison, consider exporting raw data later.
+                    </div>
+                    <div class="flex items-center gap-3 text-sm text-gray-600">
+                        <button x-on:click="prevPage()" class="px-2 py-1 rounded border" :disabled="!hasPrev">Prev</button>
+                        <div class="flex items-center gap-1">
+                            <template x-for="p in visiblePages" :key="p.key">
+                                <button
+                                    x-show="p.type === 'page'"
+                                    x-on:click="goTo(p.page)"
+                                    class="px-2 py-1 rounded border text-xs"
+                                    :class="{'bg-indigo-600 text-white': p.page === currentPage, 'text-gray-700': p.page !== currentPage}"
+                                    x-text="p.page"></button>
+                            </template>
+                            <template x-for="p in visiblePages" :key="p.key + '-ellipsis'">
+                                <span x-show="p.type === 'ellipsis'" class="px-2 text-xs text-gray-500">&hellip;</span>
+                            </template>
+                        </div>
+                        <div class="text-xs">Page <span x-text="currentPage"></span> of <span x-text="lastPage"></span></div>
+                        <button x-on:click="nextPage()" class="px-2 py-1 rounded border" :disabled="!hasNext">Next</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -74,18 +95,87 @@
                 generatedAt: null,
                 loading: false,
                 currentMonth: new Date().toLocaleDateString(undefined,{month:'long', year:'numeric'}),
+                // pagination state
+                currentPage: 1,
+                lastPage: 1,
+                hasPrev: false,
+                hasNext: false,
+                // computed visible pages for numbered pagination
+                get visiblePages(){
+                    const pages = [];
+                    const total = this.lastPage || 1;
+                    const cur = this.currentPage || 1;
+                    // Always show first and last, plus a window around current
+                    const window = 2; // pages either side
+
+                    const addPage = (n) => pages.push({type:'page', page:n, key:'p'+n});
+                    const addEllipsis = (k) => pages.push({type:'ellipsis', key:'e'+k});
+
+                    if (total <= 7) {
+                        for (let i=1;i<=total;i++) addPage(i);
+                        return pages;
+                    }
+
+                    // always show first
+                    addPage(1);
+
+                    let left = Math.max(2, cur - window);
+                    let right = Math.min(total - 1, cur + window);
+
+                    if (left > 2) addEllipsis('l');
+
+                    for (let i = left; i <= right; i++) addPage(i);
+
+                    if (right < total - 1) addEllipsis('r');
+
+                    // always show last
+                    addPage(total);
+
+                    return pages;
+                },
                 async load(){
                     this.loading = true;
                     try {
                         const resp = await fetch("{{ route('ai.seasonal-trends') }}", {headers:{'Accept':'application/json'}});
                         if(!resp.ok){ throw new Error('Failed'); }
                         const data = await resp.json();
-                        this.species = data.species;
+                        // API now returns a paginator for 'species'
+                        if (data.species && data.species.data) {
+                            this.species = data.species.data;
+                            this.currentPage = data.species.current_page || 1;
+                            this.lastPage = data.species.last_page || 1;
+                            this.hasPrev = data.species.prev_page_url !== null;
+                            this.hasNext = data.species.next_page_url !== null;
+                        } else {
+                            this.species = data.species || [];
+                        }
                         this.months = data.months;
                         this.generatedAt = data.generated_at;
                     } catch(e){ console.error(e); }
                     finally { this.loading = false; }
                 },
+                async goTo(page){
+                    this.loading = true;
+                    try {
+                        const url = new URL("{{ route('ai.seasonal-trends') }}", window.location.origin);
+                        url.searchParams.set('page', page);
+                        const resp = await fetch(url.toString(), {headers:{'Accept':'application/json'}});
+                        if(!resp.ok){ throw new Error('Failed'); }
+                        const data = await resp.json();
+                        if (data.species && data.species.data) {
+                            this.species = data.species.data;
+                            this.currentPage = data.species.current_page || 1;
+                            this.lastPage = data.species.last_page || 1;
+                            this.hasPrev = data.species.prev_page_url !== null;
+                            this.hasNext = data.species.next_page_url !== null;
+                        }
+                        this.months = data.months;
+                        this.generatedAt = data.generated_at;
+                    } catch(e){ console.error(e); }
+                    finally { this.loading = false; }
+                },
+                prevPage(){ if(this.hasPrev) this.goTo(this.currentPage - 1); },
+                nextPage(){ if(this.hasNext) this.goTo(this.currentPage + 1); },
                 barHeight(series, value){
                     const max = Math.max(...series.map(p=>p.qty));
                     if(max <= 0){ return 0; }

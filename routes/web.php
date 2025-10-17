@@ -133,6 +133,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/live-tracks', [LiveTrackController::class, 'index'])
         ->middleware('can:viewLiveTracksAdmin')
         ->name('live-tracks.index');
+    // Admin action: allow admins to forcibly end/close a track
+    Route::post('/live-tracks/{track}/admin-end', [LiveTrackController::class, 'adminEnd'])
+        ->whereNumber('track')
+        ->middleware('can:viewLiveTracksAdmin')
+        ->name('live-tracks.admin-end');
     Route::post('/live-tracks', [LiveTrackController::class, 'create'])->name('live-tracks.create');
 });
 
