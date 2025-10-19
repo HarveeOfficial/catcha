@@ -92,6 +92,10 @@
                             </template>
                         </div>
                         <div class="flex items-center gap-2">
+                            <select x-model="provider" class="text-xs px-2 py-1 rounded border border-gray-300 bg-white cursor-pointer">
+                                <option value="openai">OpenAI</option>
+                                <option value="gemini">Gemini</option>
+                            </select>
                             <button @click="confirmClear()" class="text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Clear</button>
                             <span x-text="status" class="text-xs text-gray-500"></span>
                         </div>
@@ -150,6 +154,14 @@
                 <div class="bg-white shadow rounded p-6">
                     <form id="aiForm" class="space-y-4">
                         <div>
+                            <label for="provider" class="block text-sm font-medium text-gray-700">AI Provider</label>
+                            <select id="provider" name="provider" class="mt-1 w-full border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="openai">OpenAI (GPT-4o)</option>
+                                <option value="gemini">Gemini (Google AI)</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Select which AI service to use for this consultation.</p>
+                        </div>
+                        <div>
                             <label class="block text-sm font-medium text-gray-700">Your Question</label>
                             <textarea id="question" class="mt-1 w-full border-gray-300 rounded shadow-sm focus:ring-indigo-500 focus:border-indigo-500" rows="4" maxlength="2000" placeholder="Ask about fishing conditions, sustainable practices, or interpreting forecast data..." required></textarea>
                         </div>
@@ -184,12 +196,14 @@
                     const form = document.getElementById('aiForm');
                     if(!form || form.dataset.bound==='1'){ return; }
                     const qEl = document.getElementById('question');
+                    const providerEl = document.getElementById('provider');
                     const statusEl = document.getElementById('status');
                     const answerBox = document.getElementById('answerBox');
                     const answerEl = document.getElementById('answer');
                     form.addEventListener('submit', async (e)=>{
                         e.preventDefault();
                         const question = qEl.value.trim();
+                        const provider = providerEl?.value || 'openai';
                         if(!question){return;}
                         statusEl.textContent = 'Thinking...';
                         answerBox.classList.add('hidden');
@@ -200,7 +214,7 @@
                                     'Content-Type': 'application/json',
                                     'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content
                                 },
-                                body: JSON.stringify({question})
+                                body: JSON.stringify({question, provider})
                             });
                             const data = await resp.json();
                             if(!resp.ok || data.error){
@@ -209,7 +223,7 @@
                             }
                             answerEl.textContent = data.answer;
                             answerBox.classList.remove('hidden');
-                            statusEl.textContent = 'Done';
+                            statusEl.textContent = 'Done ('+data.provider+')';
                         } catch(err){
                             console.error(err);
                             statusEl.textContent = 'Request failed';
@@ -231,6 +245,7 @@
                 conversationId: null,
                 conversations: [],
                 mobileSidebar: false,
+                provider: 'openai',
                 async loadConversations(){
                     try {
                         const resp = await fetch('{{ route('ai.conversations.index') }}', {headers:{'Accept':'application/json'}});
@@ -267,7 +282,7 @@
                         const resp = await fetch("{{ route('ai.consult') }}", {
                             method:'POST',
                             headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content},
-                            body: JSON.stringify({question, history, save:this.saveConversation, conversation_id:this.conversationId})
+                            body: JSON.stringify({question, history, save:this.saveConversation, conversation_id:this.conversationId, provider:this.provider})
                         });
                         const data = await resp.json();
                         if(!resp.ok){

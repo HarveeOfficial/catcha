@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\AiSuggestion;
 use App\Models\FishCatch;
 use App\Models\User;
+use App\Services\AiProviderFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
 
 class AiSuggestionController extends Controller
 {
@@ -50,6 +50,8 @@ class AiSuggestionController extends Controller
         $this->authorizeCatch($fishCatch);
 
         $force = (bool) $request->boolean('force');
+        $provider = $request->string('provider', 'openai');
+
         $existing = AiSuggestion::query()
             ->where('subject_type', 'fish_catches')
             ->where('subject_id', $fishCatch->id)
@@ -61,23 +63,10 @@ class AiSuggestionController extends Controller
                 'cached' => true,
                 'content' => $existing->content,
                 'model' => $existing->model,
+                'provider' => $provider,
                 'updated_at' => $existing->updated_at?->toIso8601String(),
             ]);
         }
-
-        $apiKey = config('services.openai.key');
-        if (! $apiKey) {
-            return response()->json(['error' => 'AI service not configured'], 500);
-        }
-        $model = config('services.openai.model', 'gpt-4o-mini');
-        $fallbackChain = array_values(array_unique([
-            $model,
-            'gpt-4o-mini',
-            'gpt-4o-mini-1',
-            'gpt-3.5-turbo',
-            'gpt-3.5-turbo-0125',
-        ]));
-        $timeout = (int) config('services.openai.timeout', 30);
 
         $question = $this->buildCatchPrompt($fishCatch);
 
@@ -86,44 +75,25 @@ class AiSuggestionController extends Controller
             ['role' => 'user', 'content' => $question],
         ];
 
-        $answer = null;
-        $usedModel = null;
-        $lastError = null;
-        $tried = [];
-        $http = Http::withToken($apiKey)->timeout($timeout)->acceptJson();
-        foreach ($fallbackChain as $candidate) {
-            $tried[] = $candidate;
-            $payload = [
-                'model' => $candidate,
-                'messages' => $messages,
-                'temperature' => 0.7,
-                'max_tokens' => 400,
-            ];
-            $resp = $http->post('https://api.openai.com/v1/chat/completions', $payload);
-            if ($resp->successful()) {
-                $json = $resp->json();
-                $answer = $json['choices'][0]['message']['content'] ?? null;
-                if ($answer) {
-                    $answer = preg_replace('/\*\*(.*?)\*\*/s', '$1', $answer);
-                    $answer = preg_replace('/^#{1,6}\s*/m', '', $answer);
-                }
-                $usedModel = $candidate;
-                break;
-            } else {
-                $err = $resp->json();
-                $code = $err['error']['code'] ?? $err['error']['type'] ?? null;
-                if (! in_array($code, ['model_not_found', 'invalid_model', 'not_found'])) {
-                    $lastError = $err;
-                    break;
-                }
+        try {
+            $aiProvider = AiProviderFactory::make($provider);
+            $result = $aiProvider->chat($messages);
+            $answer = $result['answer'] ?? null;
+            $usedModel = $result['model'] ?? 'unknown';
+
+            if ($answer) {
+                $answer = preg_replace('/\*\*(.*?)\*\*/s', '$1', $answer);
+                $answer = preg_replace('/^#{1,6}\s*/m', '', $answer);
             }
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'AI request failed: '.$e->getMessage(),
+            ], 502);
         }
 
         if (! $answer) {
             return response()->json([
                 'error' => 'AI request failed',
-                'details' => app()->isLocal() || config('app.debug') ? $lastError : null,
-                'models_tried' => $tried,
             ], 502);
         }
 
@@ -141,6 +111,7 @@ class AiSuggestionController extends Controller
             'cached' => false,
             'content' => $rec->content,
             'model' => $rec->model,
+            'provider' => $provider,
             'updated_at' => $rec->updated_at?->toIso8601String(),
         ]);
     }

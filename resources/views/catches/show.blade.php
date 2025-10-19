@@ -171,6 +171,13 @@
                             <span x-text="status" class="text-[11px] text-gray-500"></span>
                         </div>
                         <p class="text-[11px] text-gray-600 mb-3">Generate a draft sustainability / compliance review based on this catch. Edit before submitting.</p>
+                        <div class="mb-3 flex items-center gap-3">
+                            <label for="ai-provider" class="text-[11px] font-medium text-gray-700">AI Provider:</label>
+                            <select id="ai-provider" x-model="provider" class="text-xs px-2 py-1 border border-gray-300 rounded">
+                                <option value="openai">OpenAI</option>
+                                <option value="gemini">Gemini</option>
+                            </select>
+                        </div>
                         <div class="flex flex-wrap gap-2 mb-3">
                             <button type="button" @click="generate()" :disabled="loading" class="px-3 py-1.5 text-xs rounded bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white">Generate</button>
                             <button type="button" @click="apply()" :disabled="!suggestion || loading" class="px-3 py-1.5 text-xs rounded bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white">Insert</button>
@@ -191,6 +198,7 @@
                             status:'',
                             suggestion:'',
                             error:'',
+                            provider:'openai',
                             async generate(){
                                 this.error=''; this.suggestion=''; this.loading=true; this.status='Generating';
                                 const question = `Provide a concise professional sustainability & compliance review for the following fish catch. Strictly ground every point in the data provided. If something (like regulation or season) is unknown, say 'insufficient data' instead of guessing. Avoid legal claims unless explicitly present in the data. Include potential issues (size, season, gear, weather safety) and positive practices. Return plain text, no markdown lists. Do NOT assign a numeric rating.\n\nCatch Data:\nDate/Time: {{ $catch->caught_at->format('Y-m-d H:i') }}\nSpecies: {{ $catch->species?->common_name ?? 'N/A' }}\nQuantity (kg): {{ $catch->quantity }}\nCount: {{ $catch->count ?? 'N/A' }}\nLocation: {{ $catch->location ?? 'N/A' }}\nGear: {{ $catch->gear_type ?? 'N/A' }}@php($w=$catch->weather)@if($w)\nWeather: Temp {{ $w['temperature_c'] ?? 'N/A' }}C, Wind {{ $w['wind_speed_kmh'] ?? 'N/A' }} km/h @if(isset($w['wind_dir_deg']))Dir {{ $w['wind_dir_deg'] }}°@endif, Humidity {{ $w['humidity_percent'] ?? 'N/A' }}%@endif`;
@@ -198,13 +206,13 @@
                                     const resp = await fetch("{{ route('ai.consult') }}", {
                                         method:'POST',
                                         headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content},
-                                        body: JSON.stringify({question})
+                                        body: JSON.stringify({question, provider: this.provider})
                                     });
                                     const data = await resp.json();
                                     if(!resp.ok || data.error){
                                         this.error = data.error || 'AI error';
                                     } else {
-                                        this.suggestion = data.answer; this.status='Ready';
+                                        this.suggestion = data.answer; this.status='Ready (' + (data.provider || 'unknown') + ')';
                                     }
                                 } catch(e){
                                     console.error(e); this.error='Network error';

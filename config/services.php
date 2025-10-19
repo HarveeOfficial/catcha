@@ -45,6 +45,12 @@ return [
         'timeout' => env('OPENAI_TIMEOUT', 30),
     ],
 
+    'gemini' => [
+        'key' => env('GOOGLE_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'timeout' => env('GEMINI_TIMEOUT', 30),
+    ],
+
     // Simple web analytics (e.g. Google Analytics 4). Measurement ID example: G-XXXXXXXXXX
     'analytics' => [
         'measurement_id' => env('ANALYTICS_MEASUREMENT_ID'),
