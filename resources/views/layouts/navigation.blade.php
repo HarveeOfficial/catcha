@@ -32,12 +32,13 @@
                     <x-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
                         {{ __('Guides') }}
                     </x-nav-link>
-                    
+
+                    @unless(auth()->check() && auth()->user()->role === 'fisher')
                         <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
                             {{ __('AI Chat') }}
                         </x-nav-link>
                     @endunless
-                    
+                    @endunless
                     <x-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
                         {{ __('Heatmap') }}
                     </x-nav-link>
