@@ -13,7 +13,9 @@
                     </div>
                     <div class="flex items-center gap-2 text-xs">
                         <button @click="load()" class="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50" :disabled="loading">Refresh</button>
+                        @unless(auth()->check() && auth()->user()->role === 'fisher' || auth()->check() && auth()->user()->role === 'expert')
                         <a :href="'{{ route('ai.seasonal-trends') }}?format=csv'" class="px-3 py-1 rounded border text-sky-600 hover:bg-sky-50">Download CSV</a>
+                        @endunless
                         <div x-show="loading" class="flex items-center gap-1 text-gray-500">
                             <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" class="opacity-25"/><path d="M12 2a10 10 0 0 1 10 10" class="opacity-75"/></svg>
                             Loading...

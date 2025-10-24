@@ -46,8 +46,10 @@ class GeminiProvider implements AiProvider
         $payload = [
             'contents' => $contents,
             'generationConfig' => [
-                'temperature' => 0.7,
-                'maxOutputTokens' => 2048,
+                'temperature' => 0.5, // More focused and consistent for expert advice
+                'maxOutputTokens' => 1200, // Increased for more detailed expert responses
+                'topP' => 0.9,
+                'topK' => 40,
             ],
         ];
 

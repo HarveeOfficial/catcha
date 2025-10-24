@@ -37,8 +37,10 @@ class OpenAiProvider implements AiProvider
             $payload = [
                 'model' => $model,
                 'messages' => $messages,
-                'temperature' => 0.7,
-                'max_tokens' => 400,
+                'temperature' => 0.5, // More focused and consistent for expert advice
+                'max_tokens' => 800, // Increased for more detailed expert responses
+                'presence_penalty' => 0.1,
+                'frequency_penalty' => 0.1,
             ];
 
             $client = Http::withToken($this->apiKey)

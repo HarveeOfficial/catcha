@@ -12,15 +12,18 @@ class DashboardController extends Controller
     public function __invoke()
     {
         $userId = Auth::id();
-        $recentCatches = FishCatch::with(['species'])
-            ->where('user_id', $userId)
-            ->latest('caught_at')
-            ->limit(5)
-            ->get();
+        $user = Auth::user();
+
+        // Experts see all recent catches; regular users see only their own
+        $recentCatchesQuery = FishCatch::with(['species']);
+        if ($user && ! $user->isExpert()) {
+            $recentCatchesQuery = $recentCatchesQuery->where('user_id', $userId);
+        }
+        $recentCatches = $recentCatchesQuery->latest('caught_at')->limit(5)->get();
 
         // Database agnostic monthly aggregation
         $driver = DB::getDriverName();
-        $dateExpr = match($driver) {
+        $dateExpr = match ($driver) {
             'mysql', 'mariadb' => "DATE_FORMAT(caught_at, '%Y-%m')",
             'pgsql' => "TO_CHAR(caught_at, 'YYYY-MM')",
             'sqlite' => "strftime('%Y-%m', caught_at)",
@@ -28,10 +31,12 @@ class DashboardController extends Controller
             default => "DATE_FORMAT(caught_at, '%Y-%m')"
         };
 
-        $monthlyTotals = FishCatch::selectRaw("{$dateExpr} as ym, SUM(quantity) as total_qty")
-            ->where('user_id', $userId)
-            ->groupBy('ym')
-            ->orderBy('ym','desc')
+        $monthlyTotals = FishCatch::selectRaw("{$dateExpr} as ym, SUM(quantity) as total_qty");
+        if ($user && ! $user->isExpert()) {
+            $monthlyTotals = $monthlyTotals->where('user_id', $userId);
+        }
+        $monthlyTotals = $monthlyTotals->groupBy('ym')
+            ->orderBy('ym', 'desc')
             ->limit(6)
             ->get();
 
@@ -40,7 +45,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // Admin view toggle: admins always see it; experts can opt-in via ?view=admin
+        // Admin view toggle: only admins can see admin dashboard
         $siteTotals = null;
         $userCount = null;
         $speciesCount = null;
@@ -48,7 +53,7 @@ class DashboardController extends Controller
         $user = Auth::user();
         $showAdmin = false;
         if ($user) {
-            $showAdmin = $user->isAdmin() || ($user->isExpert() && request()->input('view') === 'admin');
+            $showAdmin = $user->isAdmin();
         }
 
         if ($showAdmin) {
@@ -58,6 +63,6 @@ class DashboardController extends Controller
             $pendingGuidances = Guidance::where('active', false)->orderBy('id')->limit(10)->get();
         }
 
-        return view('dashboard', compact('recentCatches','monthlyTotals','activeGuidances','siteTotals','userCount','speciesCount','pendingGuidances','showAdmin'));
+        return view('dashboard', compact('recentCatches', 'monthlyTotals', 'activeGuidances', 'siteTotals', 'userCount', 'speciesCount', 'pendingGuidances', 'showAdmin'));
     }
 }

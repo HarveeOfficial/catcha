@@ -45,11 +45,6 @@
                     </a>
                 </div>
             @else
-                @if(auth()->user()?->isExpert())
-                    <div class="mb-3 text-sm">
-                        <a href="?view=admin" class="text-sky-600">View admin dashboard</a>
-                    </div>
-                @endif
                 <div class="grid gap-6 md:grid-cols-3">
                     <div class="p-4 bg-white shadow rounded border border-gray-200">
                         <h3 class="text-sm font-semibold text-gray-600">Recent Catches</h3>
