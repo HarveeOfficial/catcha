@@ -18,9 +18,11 @@
                     <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics')">
                         {{ __('Catches') }}
                     </x-nav-link>
+                    @unless(auth()->check() && auth()->user()->role === 'expert')
                     <x-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
                         {{ __('Analytics') }}
                     </x-nav-link>
+                    @endunless
                      <x-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
                         {{ __('Seasonal Trends') }}
                     </x-nav-link>
@@ -33,11 +35,11 @@
                         {{ __('Guides') }}
                     </x-nav-link>
 
-                    @unless(auth()->check() && auth()->user()->role === 'fisher')
+                    {{-- @unless(auth()->check() && auth()->user()->role === 'fisher') --}}
                         <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
                             {{ __('AI Chat') }}
                         </x-nav-link>
-                    @endunless
+                    {{-- @endunless --}}
                     @endunless
                     <x-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
                         {{ __('Heatmap') }}

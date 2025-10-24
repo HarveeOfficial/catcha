@@ -41,10 +41,16 @@ class OpenAiProvider implements AiProvider
                 'max_tokens' => 400,
             ];
 
-            $resp = Http::withToken($this->apiKey)
+            $client = Http::withToken($this->apiKey)
                 ->timeout($this->timeout)
-                ->acceptJson()
-                ->post('https://api.openai.com/v1/chat/completions', $payload);
+                ->acceptJson();
+
+            // For development environments with certificate issues
+            if (app()->environment('local')) {
+                $client = $client->withoutVerifying();
+            }
+
+            $resp = $client->post('https://api.openai.com/v1/chat/completions', $payload);
 
             if ($resp->successful()) {
                 $json = $resp->json();

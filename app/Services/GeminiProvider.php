@@ -54,12 +54,18 @@ class GeminiProvider implements AiProvider
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}";
 
         try {
-            $resp = Http::timeout($this->timeout)
+            $client = Http::timeout($this->timeout)
                 ->acceptJson()
                 ->withHeaders([
                     'Content-Type' => 'application/json',
-                ])
-                ->post($url, $payload);
+                ]);
+
+            // For development environments with certificate issues
+            if (app()->environment('local')) {
+                $client = $client->withoutVerifying();
+            }
+
+            $resp = $client->post($url, $payload);
 
             if ($resp->successful()) {
                 $json = $resp->json();
