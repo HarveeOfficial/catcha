@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class WeatherController extends Controller
 {
@@ -19,21 +19,22 @@ class WeatherController extends Controller
         $lon = round($data['lon'], 3);
         $cacheKey = "ow_current_{$lat}_{$lon}";
 
-        $normalized = Cache::remember($cacheKey, now()->addMinutes(5), function() use ($lat,$lon) {
+        $normalized = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($lat, $lon) {
             $apiKey = config('services.openweather.key');
-            if (!$apiKey) {
+            if (! $apiKey) {
                 return ['error' => 'API key missing'];
             }
-            $resp = Http::timeout(8)->get('https://api.openweathermap.org/data/2.5/weather', [
+            $resp = Http::timeout(8)->withoutVerifying()->get('https://api.openweathermap.org/data/2.5/weather', [
                 'lat' => $lat,
                 'lon' => $lon,
                 'appid' => $apiKey,
-                'units' => 'metric'
+                'units' => 'metric',
             ]);
             if ($resp->failed()) {
                 return ['error' => 'Weather service unavailable'];
             }
             $p = $resp->json();
+
             return [
                 'latitude' => $lat,
                 'longitude' => $lon,
@@ -45,13 +46,14 @@ class WeatherController extends Controller
                 'wind_dir_deg' => $p['wind']['deg'] ?? null,
                 'precipitation_mm' => $p['rain']['1h'] ?? $p['snow']['1h'] ?? 0,
                 'conditions' => $p['weather'][0]['description'] ?? null,
-                'source' => 'openweather'
+                'source' => 'openweather',
             ];
         });
 
         if (isset($normalized['error'])) {
             return response()->json($normalized, 500);
         }
+
         return response()->json($normalized);
     }
 }
