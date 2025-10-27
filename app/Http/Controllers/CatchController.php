@@ -15,13 +15,10 @@ class CatchController extends Controller
         $user = Auth::user();
         if ($user->isExpert() || $user->isAdmin()) {
             $query = FishCatch::with(['species', 'user'])->withCount('feedbacks')->latest('caught_at');
-            if ($request->filled('fisher')) {
-                $term = $request->input('fisher');
-                $query->whereHas('user', function ($q) use ($term) {
-                    $q->where('name', 'like', '%'.$term.'%');
-                });
+            if ($request->filled('species_id')) {
+                $query->where('species_id', $request->input('species_id'));
             }
-            $catches = $query->paginate(20)->appends($request->only('fisher'));
+            $catches = $query->paginate(20)->appends($request->only('species_id'));
         } else {
             $catches = FishCatch::with(['species'])
                 ->where('user_id', $user->id)
@@ -29,7 +26,9 @@ class CatchController extends Controller
                 ->paginate(15);
         }
 
-        return view('catches.index', compact('catches'));
+        $species = Species::orderBy('common_name')->get();
+
+        return view('catches.index', compact('catches', 'species'));
     }
 
     public function create()
@@ -77,8 +76,8 @@ class CatchController extends Controller
 
     public function show(FishCatch $fishCatch)
     {
-    /** @var \App\Models\User $user */
-    $user = Auth::user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->user_id !== $user->id) {
             abort(403);
         }
@@ -90,8 +89,8 @@ class CatchController extends Controller
 
     public function edit(FishCatch $fishCatch)
     {
-    /** @var \App\Models\User $user */
-    $user = Auth::user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->user_id !== $user->id) {
             abort(403);
         }
@@ -109,8 +108,8 @@ class CatchController extends Controller
 
     public function update(Request $request, FishCatch $fishCatch)
     {
-    /** @var \App\Models\User $user */
-    $user = Auth::user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->user_id !== $user->id) {
             abort(403);
         }
