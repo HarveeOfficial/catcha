@@ -26,7 +26,7 @@
                             <div class="font-medium">{{ $catch->avg_size_cm ?? '—' }}</div>
                         </div>
                         <div><span class="text-gray-500">Gear</span>
-                            <div class="font-medium">{{ $catch->gear_type ?? '—' }}</div>
+                            <div class="font-medium">{{ $catch->gearType?->name ?? '—' }}</div>
                         </div>
                         <div><span class="text-gray-500">Vessel</span>
                             <div class="font-medium">{{ $catch->vessel_name ?? '—' }}</div>
@@ -260,7 +260,7 @@
                                 this.loading = true;
                                 this.status = 'Generating';
                                 const question =
-                                    `Provide a concise professional sustainability & compliance review for the following fish catch. Strictly ground every point in the data provided. If something (like regulation or season) is unknown, say 'insufficient data' instead of guessing. Avoid legal claims unless explicitly present in the data. Include potential issues (size, season, gear, weather safety) and positive practices. Return plain text, no markdown lists. Do NOT assign a numeric rating.\n\nCatch Data:\nDate/Time: {{ $catch->caught_at->format('Y-m-d H:i') }}\nSpecies: {{ $catch->species?->common_name ?? 'N/A' }}\nQuantity (kg): {{ $catch->quantity }}\nCount: {{ $catch->count ?? 'N/A' }}\nLocation: {{ $catch->location ?? 'N/A' }}\nGear: {{ $catch->gear_type ?? 'N/A' }}@php($w = $catch->weather)@if ($w)\nWeather: Temp {{ $w['temperature_c'] ?? 'N/A' }}C, Wind {{ $w['wind_speed_kmh'] ?? 'N/A' }} km/h @if (isset($w['wind_dir_deg']))Dir {{ $w['wind_dir_deg'] }}°@endif, Humidity {{ $w['humidity_percent'] ?? 'N/A' }}%@endif`;
+                                    `Provide a concise professional sustainability & compliance review for the following fish catch. Strictly ground every point in the data provided. If something (like regulation or season) is unknown, say 'insufficient data' instead of guessing. Avoid legal claims unless explicitly present in the data. Include potential issues (size, season, gear, weather safety) and positive practices. Return plain text, no markdown lists. Do NOT assign a numeric rating.\n\nCatch Data:\nDate/Time: {{ $catch->caught_at->format('Y-m-d H:i') }}\nSpecies: {{ $catch->species?->common_name ?? 'N/A' }}\nQuantity (kg): {{ $catch->quantity }}\nCount: {{ $catch->count ?? 'N/A' }}\nLocation: {{ $catch->location ?? 'N/A' }}\nGear: {{ $catch->gearType?->name ?? 'N/A' }}@php($w = $catch->weather)@if ($w)\nWeather: Temp {{ $w['temperature_c'] ?? 'N/A' }}C, Wind {{ $w['wind_speed_kmh'] ?? 'N/A' }} km/h @if (isset($w['wind_dir_deg']))Dir {{ $w['wind_dir_deg'] }}°@endif, Humidity {{ $w['humidity_percent'] ?? 'N/A' }}%@endif`;
                                 try {
                                     const resp = await fetch("{{ route('ai.consult') }}", {
                                         method: 'POST',
@@ -368,7 +368,7 @@
                         'Quantity (kg): {{ $catch->quantity }}',
                         'Count: {{ $catch->count ?? 'N/A' }}',
                         'Location: {{ $catch->location ? addslashes($catch->location) : 'N/A' }}',
-                        'Gear: {{ $catch->gear_type ?? 'N/A' }}',
+                        'Gear: {{ $catch->gearType?->name ?? 'N/A' }}',
                         @php($w = $catch->weather)
                         @if ($w)
                             'Weather: Temp {{ $w['temperature_c'] ?? 'N/A' }}C, Wind {{ $w['wind_speed_kmh'] ?? 'N/A' }} km/h{{ isset($w['wind_dir_deg']) ? ", Dir {$w['wind_dir_deg']}°" : '' }}, Humidity {{ $w['humidity_percent'] ?? 'N/A' }}%',

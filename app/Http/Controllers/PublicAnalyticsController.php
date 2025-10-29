@@ -54,8 +54,8 @@ class PublicAnalyticsController extends Controller
         $dailyBySpecies = (clone $base)
             ->whereNotNull('species_id')
             ->selectRaw("{$dateExprDay} as d, species_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count")
-            ->groupBy('d','species_id')
-            ->orderBy('d','desc')
+            ->groupBy('d', 'species_id')
+            ->orderBy('d', 'desc')
             ->get()
             ->groupBy('d');
 
@@ -70,23 +70,23 @@ class PublicAnalyticsController extends Controller
         $monthlyBySpecies = (clone $base)
             ->whereNotNull('species_id')
             ->selectRaw("{$dateExprMonth} as ym, species_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count")
-            ->groupBy('ym','species_id')
-            ->orderBy('ym','desc')
+            ->groupBy('ym', 'species_id')
+            ->orderBy('ym', 'desc')
             ->get()
             ->groupBy('ym');
 
         $annualSeries = (clone $base)
             ->selectRaw("{$dateExprYear} as y, SUM(quantity) as qty, SUM(count) as catch_count")
             ->groupBy('y')
-            ->orderBy('y','desc')
+            ->orderBy('y', 'desc')
             ->get();
 
         // annual by species (long format): y, species_id, qty, catch_count
         $annualBySpecies = (clone $base)
             ->whereNotNull('species_id')
             ->selectRaw("{$dateExprYear} as y, species_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count")
-            ->groupBy('y','species_id')
-            ->orderBy('y','desc')
+            ->groupBy('y', 'species_id')
+            ->orderBy('y', 'desc')
             ->get()
             ->groupBy('y');
 
@@ -97,21 +97,39 @@ class PublicAnalyticsController extends Controller
             ->orderByDesc('qty')
             ->get();
 
+        $zoneBreakdown = (clone $base)
+            ->selectRaw('zone_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count, COUNT(*) as catches')
+            ->whereNotNull('zone_id')
+            ->groupBy('zone_id')
+            ->orderByDesc('qty')
+            ->with('zone')
+            ->get();
+
+        // zone by species (long format): zone_id, species_id, qty, catch_count
+        $zoneBySpecies = (clone $base)
+            ->whereNotNull('zone_id')
+            ->whereNotNull('species_id')
+            ->selectRaw('zone_id, species_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count')
+            ->groupBy('zone_id', 'species_id')
+            ->orderByDesc('qty')
+            ->get()
+            ->groupBy('zone_id');
+
         // Support CSV export: ?format=csv&series=annual|monthly|daily
         // also support monthly separated by species: ?format=csv&series=monthly&separated=species
         if (request()->input('format') === 'csv') {
-            $series = request()->input('series','monthly');
+            $series = request()->input('series', 'monthly');
             $separated = request()->input('separated') === 'species';
 
             // If user requests daily separated by species, export long-format daily-by-species CSV
             if ($series === 'daily' && $separated) {
-                $species = \App\Models\Species::orderBy('common_name')->get(['id','common_name']);
+                $species = \App\Models\Species::orderBy('common_name')->get(['id', 'common_name']);
                 $days = $dailySeries->sortByDesc('d')->values()->pluck('d')->all();
 
                 $aggregated = (clone $base)
                     ->whereNotNull('species_id')
                     ->selectRaw("{$dateExprDay} as d, species_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count")
-                    ->groupBy('d','species_id')
+                    ->groupBy('d', 'species_id')
                     ->get();
 
                 $map = [];
@@ -119,13 +137,13 @@ class PublicAnalyticsController extends Controller
                     $map[$a->d][$a->species_id] = ['qty' => $a->qty, 'count' => $a->catch_count];
                 }
 
-                $header = ['Period','Species','Qty(Kg)','Count'];
+                $header = ['Period', 'Species', 'Qty(Kg)', 'Count'];
                 $rows = [];
                 foreach ($days as $d) {
                     foreach ($species as $sp) {
                         $qty = $map[$d][$sp->id]['qty'] ?? 0;
                         $cnt = $map[$d][$sp->id]['count'] ?? 0;
-                        $rows[] = [$d, $sp->common_name, (string)$qty, (string)$cnt];
+                        $rows[] = [$d, $sp->common_name, (string) $qty, (string) $cnt];
                     }
                 }
 
@@ -144,10 +162,11 @@ class PublicAnalyticsController extends Controller
                     rewind($fp);
                     $content = stream_get_contents($fp);
                     fclose($fp);
+
                     return response($content, 200, $headers);
                 }
 
-                $callback = function() use ($header, $rows) {
+                $callback = function () use ($header, $rows) {
                     $out = fopen('php://output', 'w');
                     fputcsv($out, $header);
                     foreach ($rows as $r) {
@@ -155,20 +174,21 @@ class PublicAnalyticsController extends Controller
                     }
                     fclose($out);
                 };
+
                 return response()->stream($callback, 200, $headers);
             }
 
             // If user requests monthly separated by species, build a wide CSV with one column per species
             if ($series === 'monthly' && $separated) {
                 // Long format: one row per (month, species) with a Species column
-                $species = \App\Models\Species::orderBy('common_name')->get(['id','common_name']);
+                $species = \App\Models\Species::orderBy('common_name')->get(['id', 'common_name']);
                 $months = $monthlySeries->sortByDesc('ym')->values()->pluck('ym')->all();
 
                 // Aggregate once: month, species_id -> qty, count
                 $aggregated = (clone $base)
                     ->whereNotNull('species_id')
                     ->selectRaw("{$dateExprMonth} as ym, species_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count")
-                    ->groupBy('ym','species_id')
+                    ->groupBy('ym', 'species_id')
                     ->get();
 
                 $map = [];
@@ -176,13 +196,13 @@ class PublicAnalyticsController extends Controller
                     $map[$a->ym][$a->species_id] = ['qty' => $a->qty, 'count' => $a->catch_count];
                 }
 
-                $header = ['Period','Species','Qty(Kg)','Count'];
+                $header = ['Period', 'Species', 'Qty(Kg)', 'Count'];
                 $rows = [];
                 foreach ($months as $ym) {
                     foreach ($species as $sp) {
                         $qty = $map[$ym][$sp->id]['qty'] ?? 0;
                         $cnt = $map[$ym][$sp->id]['count'] ?? 0;
-                        $rows[] = [$ym, $sp->common_name, (string)$qty, (string)$cnt];
+                        $rows[] = [$ym, $sp->common_name, (string) $qty, (string) $cnt];
                     }
                 }
 
@@ -201,10 +221,11 @@ class PublicAnalyticsController extends Controller
                     rewind($fp);
                     $content = stream_get_contents($fp);
                     fclose($fp);
+
                     return response($content, 200, $headers);
                 }
 
-                $callback = function() use ($header, $rows) {
+                $callback = function () use ($header, $rows) {
                     $out = fopen('php://output', 'w');
                     fputcsv($out, $header);
                     foreach ($rows as $r) {
@@ -212,18 +233,19 @@ class PublicAnalyticsController extends Controller
                     }
                     fclose($out);
                 };
+
                 return response()->stream($callback, 200, $headers);
             }
 
             // Fallback: existing per-period CSVs (daily/monthly/annual)
             // Also support annual separated by species: long format Year, Species, Qty, Count
             if ($series === 'annual' && $separated) {
-                $species = \App\Models\Species::orderBy('common_name')->get(['id','common_name']);
+                $species = \App\Models\Species::orderBy('common_name')->get(['id', 'common_name']);
 
                 $aggregated = (clone $base)
                     ->whereNotNull('species_id')
                     ->selectRaw("{$dateExprYear} as y, species_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count")
-                    ->groupBy('y','species_id')
+                    ->groupBy('y', 'species_id')
                     ->get();
 
                 $map = [];
@@ -232,13 +254,13 @@ class PublicAnalyticsController extends Controller
                 }
 
                 $years = $annualSeries->sortByDesc('y')->values()->pluck('y')->all();
-                $header = ['Period','Species','Qty(Kg)','Count'];
+                $header = ['Period', 'Species', 'Qty(Kg)', 'Count'];
                 $rows = [];
                 foreach ($years as $y) {
                     foreach ($species as $sp) {
                         $qty = $map[$y][$sp->id]['qty'] ?? 0;
                         $cnt = $map[$y][$sp->id]['count'] ?? 0;
-                        $rows[] = [$y, $sp->common_name, (string)$qty, (string)$cnt];
+                        $rows[] = [$y, $sp->common_name, (string) $qty, (string) $cnt];
                     }
                 }
 
@@ -257,10 +279,11 @@ class PublicAnalyticsController extends Controller
                     rewind($fp);
                     $content = stream_get_contents($fp);
                     fclose($fp);
+
                     return response($content, 200, $headers);
                 }
 
-                $callback = function() use ($header, $rows) {
+                $callback = function () use ($header, $rows) {
                     $out = fopen('php://output', 'w');
                     fputcsv($out, $header);
                     foreach ($rows as $r) {
@@ -268,19 +291,20 @@ class PublicAnalyticsController extends Controller
                     }
                     fclose($out);
                 };
+
                 return response()->stream($callback, 200, $headers);
             }
             if ($series === 'annual') {
                 $rows = $annualSeries->sortByDesc('y')->values();
-                $iter = $rows->map(fn($r) => [$r->y, (string)$r->qty, (string)$r->catch_count]);
+                $iter = $rows->map(fn ($r) => [$r->y, (string) $r->qty, (string) $r->catch_count]);
             } elseif ($series === 'daily') {
                 $rows = $dailySeries->sortByDesc('d')->values();
-                $iter = $rows->map(fn($r) => [$r->d, (string)$r->qty, (string)$r->catch_count]);
+                $iter = $rows->map(fn ($r) => [$r->d, (string) $r->qty, (string) $r->catch_count]);
             } else {
                 $rows = $monthlySeries->sortByDesc('ym')->values();
-                $iter = $rows->map(fn($r) => [$r->ym, (string)$r->qty, (string)$r->catch_count]);
+                $iter = $rows->map(fn ($r) => [$r->ym, (string) $r->qty, (string) $r->catch_count]);
             }
-            $header = ['Period','Qty(Kg)','Count'];
+            $header = ['Period', 'Qty(Kg)', 'Count'];
             $filename = sprintf('public-catch-analytics-%s-%s.csv', $series, now()->format('YmdHis'));
             // For testing environments, return non-streamed content so tests can assert on it
             $headers = [
@@ -296,10 +320,11 @@ class PublicAnalyticsController extends Controller
                 rewind($fp);
                 $content = stream_get_contents($fp);
                 fclose($fp);
+
                 return response($content, 200, $headers);
             }
 
-            $callback = function() use ($header, $iter) {
+            $callback = function () use ($header, $iter) {
                 $out = fopen('php://output', 'w');
                 fputcsv($out, $header);
                 foreach ($iter as $row) {
@@ -307,6 +332,7 @@ class PublicAnalyticsController extends Controller
                 }
                 fclose($out);
             };
+
             return response()->stream($callback, 200, $headers);
         }
 
@@ -320,6 +346,8 @@ class PublicAnalyticsController extends Controller
             'annualBySpecies' => $annualBySpecies,
             'gearBreakdown' => $gearBreakdown,
             'annualSeries' => $annualSeries,
+            'zoneBreakdown' => $zoneBreakdown,
+            'zoneBySpecies' => $zoneBySpecies,
         ]);
     }
 }

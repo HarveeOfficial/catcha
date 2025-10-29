@@ -63,10 +63,46 @@
                 </ul>
             </div>
             <div class="p-4 bg-white rounded border shadow">
+                <h2 class="font-semibold text-gray-700 text-sm mb-2">Zone Breakdown</h2>
+                <ul class="space-y-1 text-sm">
+                    @forelse($zoneBreakdown as $z)
+                        <li class="flex justify-between"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full" style="background-color: {{ $z->zone?->color ?? '#ccc' }}"></span>{{ $z->zone?->name ?? 'Unknown' }}</span> <span class="text-gray-500">{{ number_format($z->qty,2) }} kg / {{ $z->catches }} catches</span></li>
+                    @empty
+                        <li class="text-gray-400 italic">No data</li>
+                    @endforelse
+                </ul>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="p-4 bg-white rounded border shadow">
                 <h2 class="font-semibold text-gray-700 text-sm mb-2">Gear Breakdown</h2>
                 <ul class="space-y-1 text-sm">
                     @forelse($gearBreakdown as $g)
                         <li class="flex justify-between"><span>{{ $g->gear_type }}</span> <span class="text-gray-500">{{ number_format($g->qty,2) }} kg / {{ $g->catches }} catches</span></li>
+                    @empty
+                        <li class="text-gray-400 italic">No data</li>
+                    @endforelse
+                </ul>
+            </div>
+            <div class="p-4 bg-white rounded border shadow">
+                <h2 class="font-semibold text-gray-700 text-sm mb-2">Zone Species (Top 10)</h2>
+                <ul class="space-y-1 text-xs">
+                    @php
+                        $allZoneSpecies = [];
+                        foreach ($zoneBySpecies as $zoneId => $species) {
+                            foreach ($species as $s) {
+                                $allZoneSpecies[] = $s;
+                            }
+                        }
+                        usort($allZoneSpecies, fn($a, $b) => $b->qty <=> $a->qty);
+                        $topZoneSpecies = array_slice($allZoneSpecies, 0, 10);
+                    @endphp
+                    @forelse($topZoneSpecies as $zs)
+                        @php
+                            $zone = $zoneBreakdown->where('zone_id', $zs->zone_id)->first();
+                        @endphp
+                        <li class="flex justify-between"><span>{{ $zs->species?->common_name ?? 'Unknown' }} <span class="text-gray-400">({{ $zone?->zone?->name ?? 'Unknown zone' }})</span></span> <span class="text-gray-500">{{ number_format($zs->qty,2) }} kg</span></li>
                     @empty
                         <li class="text-gray-400 italic">No data</li>
                     @endforelse

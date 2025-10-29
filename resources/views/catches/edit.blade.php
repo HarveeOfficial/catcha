@@ -74,8 +74,16 @@
                 </div>
                 <div class="grid gap-6 md:grid-cols-2">
                     <div>
-                        <x-input-label for="gear_type" value="Gear Type" />
-                        <x-text-input id="gear_type" type="text" name="gear_type" value="{{ old('gear_type', $catch->gear_type) }}" class="mt-1 block w-full" />
+                        <x-input-label for="gear_type_id" value="Gear Type" />
+                        <select id="gear_type_id" name="gear_type_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">-- Select Gear Type --</option>
+                            @foreach ($gearTypes as $gear)
+                                <option value="{{ $gear->id }}" @selected(old('gear_type_id', $catch->gear_type_id) == $gear->id)>
+                                    {{ $gear->name }}@if($gear->local_name) ({{ $gear->local_name }})@endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('gear_type_id')" class="mt-1" />
                     </div>
                     <div>
                         <x-input-label for="vessel_name" value="Vessel Name" />

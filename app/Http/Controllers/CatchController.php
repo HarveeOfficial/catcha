@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FishCatch;
+use App\Models\GearType;
 use App\Models\Species;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,14 +35,17 @@ class CatchController extends Controller
     public function create()
     {
         $species = Species::orderBy('common_name')->get();
+        $categories = Species::distinct()->orderBy('category')->pluck('category');
+        $gearTypes = GearType::orderBy('name')->get();
 
-        return view('catches.create', compact('species'));
+        return view('catches.create', compact('species', 'categories', 'gearTypes'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'species_id' => 'nullable|exists:species,id',
+            'gear_type_id' => 'nullable|exists:gear_types,id',
             'location' => 'nullable|string|max:150',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
@@ -52,7 +56,6 @@ class CatchController extends Controller
             'quantity' => 'nullable|numeric|min:0',
             'count' => 'nullable|integer|min:0',
             'avg_size_cm' => 'nullable|numeric|min:0',
-            'gear_type' => 'nullable|string|max:100',
             'vessel_name' => 'nullable|string|max:150',
             'environmental_data' => 'nullable|array',
             'notes' => 'nullable|array',
@@ -99,10 +102,12 @@ class CatchController extends Controller
             abort(403);
         }
         $species = Species::orderBy('common_name')->get();
+        $gearTypes = GearType::orderBy('name')->get();
 
         return view('catches.edit', [
             'catch' => $fishCatch,
             'species' => $species,
+            'gearTypes' => $gearTypes,
         ]);
     }
 

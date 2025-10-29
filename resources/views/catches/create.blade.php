@@ -18,14 +18,23 @@
                 </div>
                 <div>
                     <x-input-label for="species_id" value="Species" />
-                    <select id="species_id" name="species_id"
-                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="">-- Unknown --</option>
-                        @foreach ($species as $s)
-                            <option value="{{ $s->id }}" @selected(old('species_id') == $s->id)>{{ $s->common_name }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <div class="space-y-3 mt-1">
+                        <select id="category_filter" 
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">-- All Categories --</option>
+                            @foreach ($categories as $category)
+                                <option value="{{ $category }}">{{ $category }}</option>
+                            @endforeach
+                        </select>
+                        <select id="species_id" name="species_id"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">-- Unknown --</option>
+                            @foreach ($species as $s)
+                                <option value="{{ $s->id }}" data-category="{{ $s->category }}" @selected(old('species_id') == $s->id)>{{ $s->common_name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <x-input-error :messages="$errors->get('species_id')" class="mt-1" />
                 </div>
                 <div>
@@ -115,9 +124,17 @@
                 </div>
                 <div class="grid gap-6 md:grid-cols-2">
                     <div>
-                        <x-input-label for="gear_type" value="Gear Type" />
-                        <x-text-input id="gear_type" type="text" name="gear_type" value="{{ old('gear_type') }}"
-                            class="mt-1 block w-full" />
+                        <x-input-label for="gear_type_id" value="Gear Type" />
+                        <select id="gear_type_id" name="gear_type_id"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">-- Select Gear Type --</option>
+                            @foreach ($gearTypes as $gear)
+                                <option value="{{ $gear->id }}" @selected(old('gear_type_id') == $gear->id)>
+                                    {{ $gear->name }}@if($gear->local_name) ({{ $gear->local_name }})@endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('gear_type_id')" class="mt-1" />
                     </div>
                     <div>
                         <x-input-label for="vessel_name" value="Vessel Name" />
@@ -1117,5 +1134,50 @@
                 }, 1500);
             });
         })();
+    </script>
+    <script>
+        // Category filter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const categoryFilter = document.getElementById('category_filter');
+            const speciesSelect = document.getElementById('species_id');
+
+            if (categoryFilter && speciesSelect) {
+                // Disable species select initially if no category selected
+                speciesSelect.disabled = true;
+
+                categoryFilter.addEventListener('change', function() {
+                    const selectedCategory = this.value;
+                    const options = speciesSelect.querySelectorAll('option');
+
+                    // Enable/disable based on category selection
+                    if (selectedCategory === '') {
+                        speciesSelect.disabled = true;
+                        speciesSelect.value = '';
+                    } else {
+                        speciesSelect.disabled = false;
+                    }
+
+                    options.forEach(option => {
+                        if (option.value === '') {
+                            option.style.display = 'block'; // Always show "Unknown"
+                            return;
+                        }
+
+                        const optionCategory = option.getAttribute('data-category');
+                        if (selectedCategory === '' || optionCategory === selectedCategory) {
+                            option.style.display = 'block';
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    });
+
+                    // Reset species selection if it doesn't match the filter
+                    const currentOption = speciesSelect.querySelector('option:checked');
+                    if (currentOption && currentOption.style.display === 'none') {
+                        speciesSelect.value = '';
+                    }
+                });
+            }
+        });
     </script>
 </x-app-layout>

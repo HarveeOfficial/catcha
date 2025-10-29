@@ -38,7 +38,7 @@ class OpenAiProvider implements AiProvider
                 'model' => $model,
                 'messages' => $messages,
                 'temperature' => 0.5, // More focused and consistent for expert advice
-                'max_tokens' => 800, // Increased for more detailed expert responses
+                'max_tokens' => 1500, // Increased for more detailed expert responses
                 'presence_penalty' => 0.1,
                 'frequency_penalty' => 0.1,
             ];

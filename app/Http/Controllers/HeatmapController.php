@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FishCatch;
+use App\Models\Zone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,21 +15,139 @@ class HeatmapController extends Controller
         // Guests see aggregated public data across all users. Authenticated non-experts previously
         // saw only their own data; for public landing heatmap, expose anonymized aggregate for all.
         // If you need to restrict for logged-in non-experts later, detect Auth::check() and filter.
-        $rows = $base->select(['latitude', 'longitude', 'quantity', 'count'])
+        $catches = $base->select(['id', 'latitude', 'longitude', 'quantity', 'count', 'species_id'])
+            ->with('species:id,common_name')
             ->limit(10000)
-            ->get()
-            ->map(function ($r) {
-                $w = 1.0;
-                if (! is_null($r->quantity)) {
-                    $w = (float) $r->quantity;
-                } elseif (! is_null($r->count)) {
-                    $w = (float) $r->count;
-                }
+            ->get();
 
-                return [(float) $r->latitude, (float) $r->longitude, $w];
-            });
+        // Get all active zones with their geometries
+        $zones = Zone::where('is_active', true)->get(['id', 'name', 'color', 'geometry']);
+
+        $rows = $catches->map(function ($catch) use ($zones) {
+            $w = 1.0;
+            if (! is_null($catch->quantity)) {
+                $w = (float) $catch->quantity;
+            } elseif (! is_null($catch->count)) {
+                $w = (float) $catch->count;
+            }
+
+            // Determine which zones contain this catch point
+            $containingZones = [];
+            foreach ($zones as $zone) {
+                if ($this->pointInZone($catch->latitude, $catch->longitude, $zone->geometry)) {
+                    $containingZones[] = [
+                        'id' => $zone->id,
+                        'name' => $zone->name,
+                        'color' => $zone->color,
+                    ];
+                }
+            }
+
+            return [
+                'id' => $catch->id,
+                'lat' => (float) $catch->latitude,
+                'lng' => (float) $catch->longitude,
+                'weight' => $w,
+                'species' => $catch->species?->common_name ?? 'Unknown',
+                'qty' => (float) ($catch->quantity ?? $catch->count ?? 0),
+                'zones' => $containingZones,
+            ];
+        });
 
         return response()->json(['points' => $rows]);
+    }
+
+    /**
+     * Check if a point is inside a GeoJSON polygon or multi-polygon.
+     */
+    private function pointInZone(float $lat, float $lng, mixed $geometry): bool
+    {
+        if (is_string($geometry)) {
+            $geometry = json_decode($geometry, true);
+        }
+
+        if (! is_array($geometry)) {
+            return false;
+        }
+
+        // Handle FeatureCollection
+        if (isset($geometry['features']) && is_array($geometry['features'])) {
+            foreach ($geometry['features'] as $feature) {
+                if ($this->pointInFeature($lat, $lng, $feature)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Handle single Feature or Geometry
+        return $this->pointInFeature($lat, $lng, $geometry);
+    }
+
+    /**
+     * Check if a point is in a single GeoJSON feature.
+     */
+    private function pointInFeature(float $lat, float $lng, array $feature): bool
+    {
+        $geom = isset($feature['geometry']) ? $feature['geometry'] : $feature;
+
+        if (! isset($geom['type']) || ! isset($geom['coordinates'])) {
+            return false;
+        }
+
+        return match ($geom['type']) {
+            'Polygon' => $this->pointInPolygon($lat, $lng, $geom['coordinates']),
+            'MultiPolygon' => $this->pointInMultiPolygon($lat, $lng, $geom['coordinates']),
+            default => false,
+        };
+    }
+
+    /**
+     * Ray casting algorithm to check if point is in polygon.
+     * Polygon coordinates: [[[lng, lat], [lng, lat], ...]]
+     */
+    private function pointInPolygon(float $lat, float $lng, array $polygonCoords): bool
+    {
+        // GeoJSON uses [lng, lat] order
+        $x = $lng;
+        $y = $lat;
+
+        $inside = false;
+        $p1X = null;
+        $p1Y = null;
+
+        foreach ($polygonCoords as $ring) {
+            foreach ($ring as $point) {
+                $p2X = $point[0];
+                $p2Y = $point[1];
+
+                if ($p1X !== null) {
+                    if (($p2Y > $y) !== ($p1Y > $y) && $x < ($p1X - $p2X) * ($y - $p2Y) / ($p1Y - $p2Y) + $p2X) {
+                        $inside = ! $inside;
+                    }
+                }
+
+                $p1X = $p2X;
+                $p1Y = $p2Y;
+            }
+        }
+
+        return $inside;
+    }
+
+    /**
+     * Check if point is in any polygon of a MultiPolygon.
+     */
+    private function pointInMultiPolygon(float $lat, float $lng, array $multiPolygonCoords): bool
+    {
+        foreach ($multiPolygonCoords as $polygonCoords) {
+            if ($this->pointInPolygon($lat, $lng, $polygonCoords)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function view()

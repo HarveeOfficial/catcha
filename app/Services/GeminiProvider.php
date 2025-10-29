@@ -47,7 +47,7 @@ class GeminiProvider implements AiProvider
             'contents' => $contents,
             'generationConfig' => [
                 'temperature' => 0.5, // More focused and consistent for expert advice
-                'maxOutputTokens' => 1200, // Increased for more detailed expert responses
+                'maxOutputTokens' => 2048, // Increased for more detailed expert responses
                 'topP' => 0.9,
                 'topK' => 40,
             ],

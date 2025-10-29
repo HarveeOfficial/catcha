@@ -49,6 +49,11 @@
                             {{ __('Live Track') }}
                         </x-nav-link>
                     @endcan
+                    @if(auth()->check() && auth()->user()->isAdmin())
+                        <x-nav-link :href="route('admin.zones.index')" :active="request()->routeIs('admin.zones.*')">
+                            {{ __('Zones') }}
+                        </x-nav-link>
+                    @endif
                     </div>
             </div>
 
@@ -142,6 +147,11 @@
                     {{ __('Live Track') }}
                 </x-responsive-nav-link>
             @endcan
+            @if(auth()->check() && auth()->user()->isAdmin())
+                <x-responsive-nav-link :href="route('admin.zones.index')" :active="request()->routeIs('admin.zones.*')">
+                    {{ __('Zones') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

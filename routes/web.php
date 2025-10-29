@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ZoneController;
 use App\Http\Controllers\AiConsultController;
 use App\Http\Controllers\AiConversationController;
 use App\Http\Controllers\AiGuidanceController;
@@ -8,12 +9,13 @@ use App\Http\Controllers\CatchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GuidanceController;
 use App\Http\Controllers\HeatmapController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LiveTrackController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicAnalyticsController;
 use App\Http\Controllers\WeatherCityController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\WeatherForecastController;
+use App\Http\Middleware\IsAdmin;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -64,6 +66,9 @@ Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verif
 Route::get('/catches/heatmap', [HeatmapController::class, 'view'])->name('catches.heatmap');
 Route::get('/catches/heatmap/data', [HeatmapController::class, 'data'])->name('catches.heatmap.data');
 Route::get('/catches/heatmap/point-info', [HeatmapController::class, 'pointInfo'])->name('catches.heatmap.point-info');
+
+// Public zones view
+Route::view('/zones', 'zones')->name('zones');
 
 Route::middleware(['auth'])->group(function () {
     // Catches
@@ -146,6 +151,20 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+// Admin Routes (only for admins)
+Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/zones', [ZoneController::class, 'index'])->name('zones.index');
+    Route::get('/zones/create', [ZoneController::class, 'create'])->name('zones.create');
+    Route::post('/zones', [ZoneController::class, 'store'])->name('zones.store');
+    Route::get('/zones/{zone}', [ZoneController::class, 'show'])->name('zones.show');
+    Route::get('/zones/{zone}/edit', [ZoneController::class, 'edit'])->name('zones.edit');
+    Route::patch('/zones/{zone}', [ZoneController::class, 'update'])->name('zones.update');
+    Route::delete('/zones/{zone}', [ZoneController::class, 'destroy'])->name('zones.destroy');
+});
+
+// Public API for zone data
+Route::get('/api/zones/data', [ZoneController::class, 'data'])->name('api.zones.data');
 
 require __DIR__.'/auth.php';
 

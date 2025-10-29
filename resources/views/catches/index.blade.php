@@ -60,7 +60,7 @@
                                     <td class="py-2 pr-4">{{ $c->quantity }}</td>
                                     <td class="py-2 pr-4">{{ $c->count }}</td>
                                     <td class="py-2 pr-4">{{ $c->location ?: '—' }}</td>
-                                    <td class="py-2 pr-4">{{ $c->gear_type ?: '—' }}</td>
+                                    <td class="py-2 pr-4">{{ $c->gearType?->name ?: '—' }}</td>
                                     <td class="py-2 pr-4 whitespace-nowrap">
                                         {{ $c->caught_at->format('Y-m-d H:i') }}
                                         @if (auth()->user()->isExpert() || auth()->user()->isAdmin())
@@ -93,7 +93,7 @@
                                 <span><span class="font-medium">Qty:</span> {{ $c->quantity }}</span>
                                 <span><span class="font-medium">Count:</span> {{ $c->count }}</span>
                                 <span><span class="font-medium">Loc:</span> {{ $c->location ?: '—' }}</span>
-                                <span><span class="font-medium">Gear:</span> {{ $c->gear_type ?: '—' }}</span>
+                                <span><span class="font-medium">Gear:</span> {{ $c->gearType?->name ?: '—' }}</span>
                                 @if (auth()->user()->isExpert() || auth()->user()->isAdmin())
                                     <span><span class="font-medium">Feedback:</span>
                                         {{ $c->feedbacks_count ?? $c->feedbacks()->count() }}</span>

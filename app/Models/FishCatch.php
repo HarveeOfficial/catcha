@@ -9,7 +9,7 @@ class FishCatch extends Model
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
 
     protected $fillable = [
-        'user_id', 'species_id', 'location', 'latitude', 'longitude', 'geo_accuracy_m', 'geohash', 'geo_source', 'caught_at', 'quantity', 'count', 'avg_size_cm', 'gear_type', 'vessel_name', 'environmental_data', 'notes', 'flagged', 'flag_reason',
+        'user_id', 'species_id', 'zone_id', 'gear_type_id', 'location', 'latitude', 'longitude', 'geo_accuracy_m', 'geohash', 'geo_source', 'caught_at', 'quantity', 'count', 'avg_size_cm', 'vessel_name', 'environmental_data', 'notes', 'flagged', 'flag_reason',
     ];
 
     protected $casts = [
@@ -30,6 +30,16 @@ class FishCatch extends Model
     public function species()
     {
         return $this->belongsTo(Species::class);
+    }
+
+    public function gearType()
+    {
+        return $this->belongsTo(GearType::class);
+    }
+
+    public function zone()
+    {
+        return $this->belongsTo(Zone::class);
     }
 
     // Location relation removed; using plain text column 'location'.

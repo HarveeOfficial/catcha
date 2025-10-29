@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Gate;
 use App\Models\LiveTrack;
-use App\Policies\LiveTrackPolicy;
 use App\Models\User;
+use App\Models\Zone;
+use App\Policies\LiveTrackPolicy;
+use App\Policies\ZonePolicy;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(LiveTrack::class, LiveTrackPolicy::class);
+        Gate::policy(Zone::class, ZonePolicy::class);
         Gate::define('viewLiveTracksAdmin', function (User $user): bool {
             return $user->isAdmin();
         });

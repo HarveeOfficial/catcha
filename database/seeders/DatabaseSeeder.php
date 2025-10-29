@@ -40,6 +40,11 @@ class DatabaseSeeder extends Seeder
             $this->call(SpeciesPhilippinesSeeder::class);
         }
 
+        // Reference gear types
+        if (\App\Models\GearType::count() === 0) {
+            $this->call(GearTypeSeeder::class);
+        }
+
         // Reference locations
         if (Location::count() === 0) {
             Location::insert([
@@ -47,5 +52,8 @@ class DatabaseSeeder extends Seeder
                 ['name' => 'Zone B', 'latitude' => 14.7000, 'longitude' => 121.0000, 'created_at' => now(), 'updated_at' => now()],
             ]);
         }
+
+        // Populate catches
+        $this->call(CatchSeeder::class);
     }
 }

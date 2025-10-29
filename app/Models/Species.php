@@ -10,7 +10,7 @@ class Species extends Model
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
 
     protected $fillable = [
-        'common_name', 'filipino_name', 'scientific_name', 'conservation_status', 'min_size_cm', 'seasonal_restrictions',
+        'common_name', 'category', 'filipino_name', 'scientific_name', 'conservation_status', 'min_size_cm', 'seasonal_restrictions',
     ];
 
     protected $casts = [
@@ -25,6 +25,11 @@ class Species extends Model
     public function guidances()
     {
         return $this->hasMany(Guidance::class);
+    }
+
+    public function zones()
+    {
+        return $this->belongsToMany(Zone::class, 'zone_species');
     }
 
     /**

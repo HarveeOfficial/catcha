@@ -12,7 +12,7 @@
                 <dt class="font-medium text-gray-600">Quantity (kg)</dt><dd>{{ $catch->quantity }}</dd>
                 <dt class="font-medium text-gray-600">Count</dt><dd>{{ $catch->count }}</dd>
                 <dt class="font-medium text-gray-600">Location</dt><dd>{{ $catch->location }}</dd>
-                <dt class="font-medium text-gray-600">Gear Type</dt><dd>{{ $catch->gear_type ?? '—' }}</dd>
+                <dt class="font-medium text-gray-600">Gear Type</dt><dd>{{ $catch->gearType?->name ?? '—' }}</dd>
                 @php($w = $catch->weather)
                 @if($w)
                     <dt class="font-medium text-gray-600">Weather Temp</dt><dd>{{ $w['temperature_c'] ?? '—' }} °C</dd>
@@ -122,7 +122,7 @@
                             error:'',
                             async generate(){
                                 this.error=''; this.suggestion=''; this.loading=true; this.status='Generating';
-                                const question = `Provide a concise professional sustainability & compliance review for the following fish catch. Include potential issues (size, season, gear, weather safety) and positive practices. Return plain text, no markdown lists. Do NOT assign a numeric rating.\n\nCatch Data:\nDate/Time: {{ $catch->caught_at->format('Y-m-d H:i') }}\nSpecies: {{ optional($catch->species)->common_name ?? 'N/A' }}\nQuantity (kg): {{ $catch->quantity }}\nCount: {{ $catch->count ?? 'N/A' }}\nLocation: {{ $catch->location }}\nGear: {{ $catch->gear_type ?? 'N/A' }}@php($w=$catch->weather)@if($w)\nWeather: Temp {{ $w['temperature_c'] ?? 'N/A' }}C, Wind {{ $w['wind_speed_kmh'] ?? 'N/A' }} km/h @if(isset($w['wind_dir_deg']))Dir {{ $w['wind_dir_deg'] }}°@endif, Humidity {{ $w['humidity_percent'] ?? 'N/A' }}%@endif`;
+                                const question = `Provide a concise professional sustainability & compliance review for the following fish catch. Include potential issues (size, season, gear, weather safety) and positive practices. Return plain text, no markdown lists. Do NOT assign a numeric rating.\n\nCatch Data:\nDate/Time: {{ $catch->caught_at->format('Y-m-d H:i') }}\nSpecies: {{ optional($catch->species)->common_name ?? 'N/A' }}\nQuantity (kg): {{ $catch->quantity }}\nCount: {{ $catch->count ?? 'N/A' }}\nLocation: {{ $catch->location }}\nGear: {{ $catch->gearType?->name ?? 'N/A' }}@php($w=$catch->weather)@if($w)\nWeather: Temp {{ $w['temperature_c'] ?? 'N/A' }}C, Wind {{ $w['wind_speed_kmh'] ?? 'N/A' }} km/h @if(isset($w['wind_dir_deg']))Dir {{ $w['wind_dir_deg'] }}°@endif, Humidity {{ $w['humidity_percent'] ?? 'N/A' }}%@endif`;
                                 try {
                                     const resp = await fetch("{{ route('ai.consult') }}", {
                                         method:'POST',
