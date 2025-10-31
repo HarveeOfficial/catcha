@@ -16,7 +16,37 @@ class SeasonalTrendController extends Controller
     {
         $now = Carbon::now();
         // Paginate species list so the UI can show a limited number per page
-        $paginated = Species::query()
+        $speciesQuery = Species::query();
+
+        // Optional name search (client-side dropdown or search box may pass 'q')
+        $q = $request->input('q');
+        // Suggestions endpoint: return lightweight species list for typeahead
+        if ($request->boolean('suggest')) {
+            $suggestQ = Species::query();
+            if (! empty($q)) {
+                $suggestQ->where('common_name', 'like', '%'.$q.'%');
+            }
+            $list = $suggestQ->orderBy('common_name')->limit(10)->get(['id','common_name']);
+            return response()->json(['data' => $list]);
+        }
+
+        // Full species list endpoint (for dropdown listing all species)
+        if ($request->boolean('list')) {
+            $listQ = Species::query()->orderBy('common_name');
+            if (! empty($q)) {
+                $listQ->where('common_name', 'like', '%'.$q.'%');
+            }
+            $all = $listQ->get(['id','common_name']);
+            return response()->json(['data' => $all]);
+        }
+            $speciesId = $request->input('species_id');
+            if (! empty($speciesId)) {
+                $speciesQuery->where('id', $speciesId);
+            } elseif (! empty($q)) {
+                $speciesQuery->where('common_name', 'like', '%'.$q.'%');
+            }
+
+        $paginated = $speciesQuery
             ->withCount(['catches as catches_last_30' => function ($q) {
                 $q->where('caught_at', '>=', now()->subDays(30));
             }])
@@ -120,6 +150,19 @@ class SeasonalTrendController extends Controller
 
         $payload = $speciesCollection->map(function (Species $s) use ($months, $series, $now) {
             $status = $s->seasonalStatus($now);
+
+            // If species has no explicit restrictions, infer season from recent catches
+            // (simple heuristic): if there were catches within the last 30 days, mark
+            // as inferred in-season so users see relevant recent activity instead of
+            // a blanket 'Unknown'. This keeps an explicit distinction via
+            // status.has_restrictions and status.inferred.
+            if (empty($status['has_restrictions'])) {
+                $recent = (int) ($s->catches_last_30 ?? 0);
+                $inferred = $recent > 0;
+                $status['inferred'] = $inferred;
+                $status['in_season'] = $inferred;
+                $status['label'] = $inferred ? 'inferred_in_season' : 'unknown';
+            }
             $trend = [];
             foreach ($months as $ym) {
                 $trend[] = [

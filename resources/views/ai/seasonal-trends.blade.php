@@ -3,13 +3,23 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">Seasonal Species Trends</h2>
     </x-slot>
 
-    <div class="py-6" x-data="seasonalTrends()" x-init="load()">
+    <div class="py-6" x-data="seasonalTrends()" x-init="load(); loadSpeciesList();">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="bg-white shadow rounded p-4 flex flex-col gap-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <h3 class="text-sm font-semibold text-gray-700">Current Month: <span x-text="currentMonth"></span></h3>
                         <span class="text-xs text-gray-400" x-text="generatedAt? 'Updated '+relativeTime(generatedAt): ''"></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="relative">
+                            <select x-model="selectedSpeciesId" @change="onSpeciesChange()" class="w-full px-3 py-1 border rounded text-sm">
+                                <option value="">All species</option>
+                                <template x-for="sp in speciesList" :key="sp.id">
+                                    <option :value="sp.id" x-text="sp.common_name"></option>
+                                </template>
+                            </select>
+                        </div>
                     </div>
                     <div class="flex items-center gap-2 text-xs">
                         <button @click="load()" class="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50" :disabled="loading">Refresh</button>
@@ -27,21 +37,18 @@
                         <thead>
                             <tr class="border-b text-xs text-gray-600">
                                 <th class="text-left py-2 pr-4">Species</th>
-                                <th class="text-left py-2 pr-4">Status</th>
                                 <th class="text-left py-2 pr-4">30d Catches</th>
                                 <th class="text-left py-2 pr-4">12-Month Qty Trend</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-if="!loading && !species.length">
-                                <tr><td colspan="4" class="py-6 text-center text-gray-400">No species data.</td></tr>
+                                <tr><td colspan="3" class="py-6 text-center text-gray-400">No species data.</td></tr>
                             </template>
                             <template x-for="sp in species" :key="sp.id">
                                 <tr class="border-b last:border-0 hover:bg-indigo-50/40">
                                     <td class="py-2 pr-4 font-medium text-gray-800" x-text="sp.common_name"></td>
-                                    <td class="py-2 pr-4">
-                                        <span :class="sp.status.in_season ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="px-2 py-0.5 rounded text-xs font-semibold" x-text="sp.status.in_season ? 'In Season' : 'Off Season'"></span>
-                                    </td>
+                                    <!-- Status column removed per request -->
                                     <td class="py-2 pr-4 text-gray-700" x-text="sp.recent_catches_30d"></td>
                                     <td class="py-2 pr-4">
                                         <div class="flex items-end gap-0.5 h-12">
@@ -135,10 +142,38 @@
 
                     return pages;
                 },
+                searchQuery: '',
+                _searchTimer: null,
+                speciesList: [],
+                selectedSpeciesId: '',
+                async loadSpeciesList(){
+                    try {
+                        const url = new URL("{{ route('ai.seasonal-trends') }}", window.location.origin);
+                        url.searchParams.set('list', '1');
+                        const resp = await fetch(url.toString(), {headers:{'Accept':'application/json'}});
+                        if(!resp.ok) throw new Error('Failed to load species list');
+                        const data = await resp.json();
+                        // Controller may return paginator ({data: [...]}) or a plain array. Normalize both.
+                        const list = data.data ?? data ?? [];
+                        this.speciesList = (Array.isArray(list) ? list : []).map(sp => ({
+                            id: sp.id,
+                            common_name: sp.common_name || sp.commonName || sp.name || sp.display_name || sp.scientific_name || ''
+                        }));
+                    } catch(e){ console.error(e); this.speciesList = []; }
+                },
+                onSpeciesChange(){
+                    this.currentPage = 1;
+                    this.load();
+                },
+                clearSearch(){ this.selectedSpeciesId=''; this.currentPage=1; this.load(); },
                 async load(){
                     this.loading = true;
                     try {
-                        const resp = await fetch("{{ route('ai.seasonal-trends') }}", {headers:{'Accept':'application/json'}});
+                        const url = new URL("{{ route('ai.seasonal-trends') }}", window.location.origin);
+                        if(this.selectedSpeciesId) url.searchParams.set('species_id', this.selectedSpeciesId);
+                        else if(this.searchQuery && this.searchQuery.trim() !== '') url.searchParams.set('q', this.searchQuery.trim());
+                        url.searchParams.set('page', this.currentPage);
+                        const resp = await fetch(url.toString(), {headers:{'Accept':'application/json'}});
                         if(!resp.ok){ throw new Error('Failed'); }
                         const data = await resp.json();
                         // API now returns a paginator for 'species'
@@ -161,6 +196,8 @@
                     try {
                         const url = new URL("{{ route('ai.seasonal-trends') }}", window.location.origin);
                         url.searchParams.set('page', page);
+                        if(this.selectedSpeciesId) url.searchParams.set('species_id', this.selectedSpeciesId);
+                        else if(this.searchQuery && this.searchQuery.trim() !== '') url.searchParams.set('q', this.searchQuery.trim());
                         const resp = await fetch(url.toString(), {headers:{'Accept':'application/json'}});
                         if(!resp.ok){ throw new Error('Failed'); }
                         const data = await resp.json();

@@ -19,12 +19,26 @@ class CatchController extends Controller
             if ($request->filled('species_id')) {
                 $query->where('species_id', $request->input('species_id'));
             }
-            $catches = $query->paginate(20)->appends($request->only('species_id'));
+            // Add date range filter
+            if ($request->filled('date_from')) {
+                $query->whereDate('caught_at', '>=', $request->input('date_from'));
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('caught_at', '<=', $request->input('date_to'));
+            }
+            $catches = $query->paginate(20)->appends($request->only('species_id', 'date_from', 'date_to'));
         } else {
-            $catches = FishCatch::with(['species'])
+            $query = FishCatch::with(['species'])
                 ->where('user_id', $user->id)
-                ->latest('caught_at')
-                ->paginate(15);
+                ->latest('caught_at');
+            // Add date range filter for non-admin users too
+            if ($request->filled('date_from')) {
+                $query->whereDate('caught_at', '>=', $request->input('date_from'));
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('caught_at', '<=', $request->input('date_to'));
+            }
+            $catches = $query->paginate(15);
         }
 
         $species = Species::orderBy('common_name')->get();

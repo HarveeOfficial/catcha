@@ -317,6 +317,7 @@
             integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
     @endonce
     <script>
         (function() {
@@ -339,9 +340,121 @@
                 'Street': osm,
                 'Satellite': esri
             }).addTo(map);
-            if (hasCoords) {
-                L.marker([lat, lon]).addTo(map).bindPopup('Catch Location');
-            }
+            
+            let zoneLayers = [];
+            
+            // Load zones from API
+            fetch('/api/zones/data')
+                .then(resp => resp.json())
+                .then(data => {
+                    if (!data || !data.zones) return;
+                    
+                    data.zones.forEach(zone => {
+                        if (!zone.geometry) return;
+                        
+                        const color = zone.color || '#00FF00';
+                        const geom = typeof zone.geometry === 'string' ? JSON.parse(zone.geometry) : zone.geometry;
+                        
+                        L.geoJSON(geom, {
+                            style: {
+                                color: color,
+                                weight: 2,
+                                opacity: 0.7,
+                                fillOpacity: 0.2
+                            },
+                            onEachFeature: function(feature, layer) {
+                                layer.zoneData = zone;
+                                layer.zoneName = zone.name;
+                                layer.zoneColor = color;
+                                layer.zoneSpecies = (zone.species || []).map(s => s.name);
+                                zoneLayers.push(layer);
+                                
+                                let popupText = `<strong>${zone.name}</strong>`;
+                                layer.bindPopup(popupText);
+                            }
+                        }).addTo(map);
+                    });
+                    
+                    // After zones are loaded, add current catch with validation
+                    if (hasCoords) {
+                        const weight = {{ $catch->quantity ?? 0 }};
+                        const species = "{{ optional($catch->species)->common_name ?? 'Unknown' }}";
+                        const size = Math.min(Math.max(weight / 2, 5), 15);
+                        
+                        // Validate current catch against zones
+                        let isInCorrectZone = false;
+                        let invalidZones = [];
+                        let wrongSpeciesZones = [];
+                        let catchZones = [];
+                        
+                        zoneLayers.forEach(zoneLayer => {
+                            const geoJsonZone = zoneLayer.toGeoJSON();
+                            let zoneGeom = geoJsonZone.type === 'FeatureCollection' ? geoJsonZone.features[0] : geoJsonZone;
+                            if (zoneGeom.type === 'Feature') zoneGeom = zoneGeom.geometry;
+                            
+                            try {
+                                const catchPoint = turf.point([lon, lat]);
+                                const isInside = turf.booleanPointInPolygon(catchPoint, zoneGeom);
+                                
+                                const speciesInZone = zoneLayer.zoneSpecies.some(s => 
+                                    s.toLowerCase() === species.toLowerCase()
+                                );
+                                
+                                if (isInside) {
+                                    catchZones.push({
+                                        name: zoneLayer.zoneName,
+                                        speciesMatch: speciesInZone
+                                    });
+                                    
+                                    if (speciesInZone) {
+                                        isInCorrectZone = true;
+                                    } else {
+                                        wrongSpeciesZones.push(zoneLayer.zoneName);
+                                    }
+                                }
+                            } catch (e) {
+                                console.log('Error checking zone geometry:', e);
+                            }
+                        });
+                        
+                        const hasIssues = wrongSpeciesZones.length > 0;
+                        const markerColor = hasIssues ? '#ef4444' : '#3b82f6';
+                        const markerBorder = hasIssues ? '#dc2626' : '#1e40af';
+                        
+                        const marker = L.circleMarker([lat, lon], {
+                            radius: size,
+                            fillColor: markerColor,
+                            color: markerBorder,
+                            weight: hasIssues ? 2 : 1,
+                            opacity: 0.7,
+                            fillOpacity: 0.6
+                        }).addTo(map);
+
+                        let popupHtml = `<strong>${species}</strong><br/>Weight: ${weight} kg`;
+                        if (catchZones.length > 0) {
+                            popupHtml += '<br/><div class="mt-2 text-sm"><strong>In zones:</strong><ul class="list-disc list-inside">';
+                            catchZones.forEach(zone => {
+                                let statusIcon = '✓';
+                                let statusClass = 'text-green-600';
+                                let warning = '';
+                                
+                                if (!zone.speciesMatch) {
+                                    statusIcon = '⚠️';
+                                    statusClass = 'text-orange-600';
+                                    warning = ' <span class="text-xs">(species not in zone)</span>';
+                                }
+                                
+                                popupHtml += `<li class="${statusClass}">${statusIcon} ${zone.name}${warning}</li>`;
+                            });
+                            popupHtml += '</ul></div>';
+                        } else {
+                            popupHtml += '<br/><span class="text-xs text-gray-500">Not in any zone</span>';
+                        }
+                        
+                        marker.bindPopup(popupHtml);
+                    }
+                })
+                .catch(err => console.error('Error loading zones:', err));
         })();
     </script>
     <script>

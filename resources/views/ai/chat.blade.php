@@ -84,7 +84,7 @@
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5h18M3 12h18M3 19h18"/></svg>
                             </button>
                             <div class="flex items-center gap-2 font-semibold">
-                                <img src="{{ asset('logo/catcha_logo.png') }}" alt="Catcha AI" class="h-6 w-6 rounded-sm shadow-sm" />
+                                <img src="{{ asset('logo/catcha_logo_updated.png') }}" alt="Catcha AI" class="h-6 w-6 rounded-sm shadow-sm" />
                                 <span>Session</span>
                             </div>
                             <template x-if="conversationId">
@@ -105,7 +105,7 @@
                             <div class="flex" :class="m.role==='user' ? 'justify-end' : 'justify-start'">
                                 <div class="flex items-start gap-2 max-w-[80%]" :class="m.role==='user' ? 'flex-row-reverse text-right' : 'flex-row'">
                                     <template x-if="m.role==='assistant'">
-                                        <img src="{{ asset('logo/catcha_logo.png') }}" alt="AI" class="h-6 w-6 rounded-sm shadow-sm mt-0.5" />
+                                        <img src="{{ asset('logo/catcha_logo_updated.png') }}" alt="AI" class="h-6 w-6 rounded-sm shadow-sm mt-0.5" />
                                     </template>
                                     <template x-if="m.role==='user'">
                                         <div class="h-6 w-6 rounded-full bg-indigo-200 text-indigo-700 flex items-center justify-center text-[10px] font-semibold mt-0.5 select-none">You</div>
@@ -116,7 +116,7 @@
                         </template>
                         <template x-if="loading">
                             <div class="flex items-start gap-2">
-                                <img src="{{ asset('logo/catcha_logo.png') }}" alt="AI" class="h-6 w-6 rounded-sm shadow-sm mt-0.5" />
+                                <img src="{{ asset('logo/catcha_logo_updated.png') }}" alt="AI" class="h-6 w-6 rounded-sm shadow-sm mt-0.5" />
                                 <div class="bg-gray-100 px-3 py-2 rounded animate-pulse">Thinking…</div>
                             </div>
                         </template>

@@ -69,7 +69,7 @@
             const activeTracks = @json($activeTracks ?? []);
             const colors = ['#1d4ed8','#059669','#dc2626','#a855f7','#ea580c','#0ea5e9','#16a34a','#eab308','#f43f5e','#10b981'];
             let allBounds = null;
-            const trackLayers = new Map(); // publicId -> { poly, marker, color, latlngs }
+            const trackLayers = new Map(); // publicId -> { poly, marker, color, latlngs, isActive }
             let rendered = 0;
             if (Array.isArray(activeTracks) && activeTracks.length) {
                 const list = document.createElement('div');
@@ -90,14 +90,23 @@
                         return;
                     }
                     const color = colors[idx % colors.length];
-                    const poly = L.polyline(latlngs, { color, weight: 4 }).addTo(map);
+                    // Use solid line for active tracks, dashed line for inactive/ended tracks
+                    const dashArray = t.isActive ? undefined : '5 5';
+                    const poly = L.polyline(latlngs, { 
+                        color, 
+                        weight: t.isActive ? 4 : 3,
+                        dashArray,
+                        opacity: t.isActive ? 1 : 0.7
+                    }).addTo(map);
                     const last = latlngs[latlngs.length - 1];
-                    const marker = L.circleMarker(last, { radius: 6, color, fillColor: color, fillOpacity: 1 }).addTo(map);
-                    marker.bindTooltip((t.user?.name || 'Unknown') + ` (${t.publicId})`, { permanent: false });
+                    const markerRadius = t.isActive ? 6 : 4;
+                    const marker = L.circleMarker(last, { radius: markerRadius, color, fillColor: color, fillOpacity: t.isActive ? 1 : 0.6 }).addTo(map);
+                    const statusLabel = t.isActive ? '' : ' (ended)';
+                    marker.bindTooltip((t.user?.name || 'Unknown') + ` (${t.publicId})${statusLabel}`, { permanent: false });
                     const b = poly.getBounds();
                     allBounds = allBounds ? allBounds.extend(b) : b;
                     rendered++;
-                    trackLayers.set(t.publicId, { poly, marker, color, latlngs });
+                    trackLayers.set(t.publicId, { poly, marker, color, latlngs, isActive: t.isActive });
 
                     const row = document.createElement('div');
                     row.className = 'flex items-center gap-2';
@@ -105,7 +114,8 @@
                     sw.className = 'inline-block w-3 h-3 rounded';
                     sw.style.backgroundColor = color;
                     const label = document.createElement('span');
-                    label.textContent = (t.user?.name || 'Unknown') + ` (${t.publicId})`;
+                    const statusText = t.isActive ? '' : ' (ended)';
+                    label.textContent = (t.user?.name || 'Unknown') + ` (${t.publicId})${statusText}`;
                     row.appendChild(sw);
                     row.appendChild(label);
                     list.appendChild(row);
@@ -127,7 +137,12 @@
             setTimeout(()=>{ map.invalidateSize(); }, 400);
 
             if (activeTracks.length) {
-                status.textContent = `Active: ${activeTracks.length} track(s)` + (rendered === 0 ? ' • no points yet' : '');
+                const activeCount = activeTracks.filter(t => t.isActive).length;
+                const completedCount = activeTracks.length - activeCount;
+                const statusStr = completedCount > 0 
+                    ? `Active: ${activeCount} • Completed: ${completedCount}` 
+                    : `Active: ${activeCount}`;
+                status.textContent = statusStr + (rendered === 0 ? ' • no points yet' : '');
                 if (rendered > 0) { fitAll(); }
             } else {
                 status.textContent = 'No active tracks';
@@ -152,21 +167,44 @@
                             if (!layer) {
                                 if (!pts.length) { return; }
                                 const color = colors[(trackLayers.size) % colors.length];
-                                const poly = L.polyline(pts, { color, weight: 4 }).addTo(map);
+                                // Use solid line for active tracks, dashed line for inactive/ended tracks
+                                const dashArray = tu.isActive ? undefined : '5 5';
+                                const poly = L.polyline(pts, { 
+                                    color, 
+                                    weight: tu.isActive ? 4 : 3,
+                                    dashArray,
+                                    opacity: tu.isActive ? 1 : 0.7
+                                }).addTo(map);
                                 const last = pts[pts.length - 1];
-                                const marker = L.circleMarker(last, { radius: 6, color, fillColor: color, fillOpacity: 1 }).addTo(map);
-                                marker.bindTooltip((tu.user?.name || 'Unknown') + ` (${tu.publicId})`, { permanent: false });
-                                trackLayers.set(tu.publicId, { poly, marker, color, latlngs: pts });
+                                const markerRadius = tu.isActive ? 6 : 4;
+                                const marker = L.circleMarker(last, { radius: markerRadius, color, fillColor: color, fillOpacity: tu.isActive ? 1 : 0.6 }).addTo(map);
+                                const statusLabel = tu.isActive ? '' : ' (ended)';
+                                marker.bindTooltip((tu.user?.name || 'Unknown') + ` (${tu.publicId})${statusLabel}`, { permanent: false });
+                                trackLayers.set(tu.publicId, { poly, marker, color, latlngs: pts, isActive: tu.isActive });
                                 const b = poly.getBounds();
                                 allBounds = allBounds ? allBounds.extend(b) : b;
                                 return;
                             }
                             if (!pts.length) { return; }
+                            // Update polyline style if track status changed
+                            if (layer.isActive !== tu.isActive) {
+                                const dashArray = tu.isActive ? undefined : '5 5';
+                                layer.poly.setStyle({ 
+                                    dashArray,
+                                    weight: tu.isActive ? 4 : 3,
+                                    opacity: tu.isActive ? 1 : 0.7
+                                });
+                                layer.marker.setRadius(tu.isActive ? 6 : 4);
+                                layer.marker.setStyle({ fillOpacity: tu.isActive ? 1 : 0.6 });
+                                layer.isActive = tu.isActive;
+                            }
                             layer.latlngs.push(...pts);
                             layer.poly.setLatLngs(layer.latlngs);
                             layer.marker.setLatLng(layer.latlngs[layer.latlngs.length - 1]);
                         });
-                        status.textContent = `Active: ${trackLayers.size} track(s) • Updated: ${new Date().toLocaleTimeString()}`;
+                        const activeCount = Array.from(trackLayers.values()).filter(l => l.isActive).length;
+                        const totalCount = trackLayers.size;
+                        status.textContent = `Active: ${activeCount}/${totalCount} track(s) • Updated: ${new Date().toLocaleTimeString()}`;
                     }
                     lastTs = data.serverTime || lastTs;
                 } catch (e) {

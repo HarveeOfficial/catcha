@@ -97,6 +97,16 @@
                                         class="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm mb-2"
                                     >
                                     
+                                    <!-- Select All Checkbox -->
+                                    <label class="flex items-center p-3 hover:bg-gray-50 cursor-pointer border border-gray-300 rounded-lg bg-gray-50 mb-2">
+                                        <input
+                                            type="checkbox"
+                                            id="selectAllSpecies"
+                                            class="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                                        >
+                                        <span class="ml-3 font-medium text-sm text-gray-900">Select All Species</span>
+                                    </label>
+                                    
                                     <!-- Selected Species Display -->
                                     <div id="selectedSpecies" class="mb-3 p-3 bg-gray-50 rounded-lg min-h-[40px] flex flex-wrap gap-2 items-center">
                                         <span class="text-xs text-gray-500 w-full" id="emptyMessage">No species selected</span>
@@ -434,6 +444,21 @@
         speciesCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', updateSelectedDisplay);
         });
+
+        // Handle Select All checkbox
+        const selectAllCheckbox = document.getElementById('selectAllSpecies');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                speciesCheckboxes.forEach(checkbox => {
+                    const item = checkbox.closest('.species-item');
+                    // Only check/uncheck visible checkboxes (not hidden by search)
+                    if (item.style.display !== 'none') {
+                        checkbox.checked = this.checked;
+                    }
+                });
+                updateSelectedDisplay();
+            });
+        }
 
         // Initialize display with pre-selected items
         updateSelectedDisplay();

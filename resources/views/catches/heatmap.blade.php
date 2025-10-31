@@ -97,10 +97,33 @@
                         if(!res.ok){ throw new Error('Network '+res.status); }
                         const json = await res.json();
                         const pts = json.points || [];
-                        if(heatLayer){ heatLayer.remove(); }
+                        if(heatLayer){
+                            try {
+                                if(map && map.removeLayer && map.hasLayer && map.hasLayer(heatLayer)){
+                                    map.removeLayer(heatLayer);
+                                } else if(typeof heatLayer.remove === 'function'){
+                                    heatLayer.remove();
+                                }
+                            } catch(_) {
+                                // fallback: attempt to call remove if available
+                                try { heatLayer.remove && heatLayer.remove(); } catch(e) {}
+                            }
+                            heatLayer = null;
+                        }
                         if(!pts.length){ if(loader){ loader.textContent='No points'; } return; }
-                        const max = Math.max(...pts.map(p => p[2]));
-                        const scaled = pts.map(p => [p[0], p[1], max ? (p[2]/max) : 0.2]);
+
+                        // Backend may return points as objects {lat,lng,weight} or as arrays [lat,lng,weight].
+                        // Normalize and compute relative intensity (0..1) for leaflet.heat.
+                        const weights = pts.map(p => Array.isArray(p) ? (p[2] ?? 1) : (p.weight ?? p.qty ?? 1));
+                        const max = Math.max(...weights.map(w => (Number.isFinite(w) ? w : 0)));
+                        const scaled = pts.map((p, i) => {
+                            const lat = Array.isArray(p) ? p[0] : p.lat;
+                            const lng = Array.isArray(p) ? p[1] : p.lng;
+                            const raw = Array.isArray(p) ? (p[2] ?? 1) : (p.weight ?? p.qty ?? 1);
+                            const w = max ? (raw / max) : 0.2;
+                            return [lat, lng, w];
+                        });
+
                         heatLayer = L.heatLayer(scaled, { radius: parseInt(radiusInput.value,10), blur: parseInt(blurInput.value,10), maxZoom: 11, minOpacity: 0.25 }).addTo(map);
                         if(loader){ loader.classList.add('hidden'); }
                     } catch(err){
@@ -134,8 +157,9 @@
                     }
                 });
                 document.getElementById('refreshBtn').addEventListener('click', e => { e.preventDefault(); loadData(); });
-                radiusInput.addEventListener('input', () => { if(heatLayer){ loadData(); } });
-                blurInput.addEventListener('input', () => { if(heatLayer){ loadData(); } });
+                // Always reload on slider change so radius/blur updates immediately.
+                radiusInput.addEventListener('input', () => { loadData(); });
+                blurInput.addEventListener('input', () => { loadData(); });
                 // ensure proper sizing after layout
                 requestAnimationFrame(()=>{ map.invalidateSize(); });
                 setTimeout(()=>{ map.invalidateSize(); }, 400);

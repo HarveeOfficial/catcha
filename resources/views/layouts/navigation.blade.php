@@ -6,7 +6,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <img src="{{ asset('logo/catcha_logo.png') }}" alt="{{ config('app.name') }} logo" class="h-9 w-auto">
+                        <img src="{{ asset('logo/catcha_logo_updated.png') }}" alt="{{ config('app.name') }} logo" class="h-9 w-auto">
                     </a>
                 </div>
 

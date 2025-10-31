@@ -90,11 +90,18 @@ class Species extends Model
      */
     public function seasonalStatus(?Carbon $date = null): array
     {
-        $in = $this->isInSeason($date);
+        $rules = $this->seasonal_restrictions;
+        $hasRestrictions = is_array($rules) && ! empty($rules);
+
+        // If there are no recorded restrictions we return has_restrictions=false
+        // and set in_season to false (treated as unknown by the UI). Existing
+        // species with defined rules keep the previous behaviour.
+        $in = $hasRestrictions ? $this->isInSeason($date) : false;
 
         return [
             'in_season' => $in,
-            'label' => $in ? 'in_season' : 'off_season',
+            'label' => $hasRestrictions ? ($in ? 'in_season' : 'off_season') : 'unknown',
+            'has_restrictions' => $hasRestrictions,
         ];
     }
 }

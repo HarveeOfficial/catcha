@@ -11,7 +11,7 @@
     <header class="border-b bg-white">
         <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <a href="/" class="flex items-center gap-2 font-semibold text-gray-700">
-                <img src="{{ asset('logo/catcha_logo.png') }}" class="h-8 w-auto" alt="Logo"> <span>{{ config('app.name') }}</span>
+                <img src="{{ asset('logo/catcha_logo_updated.png') }}" class="h-8 w-auto" alt="Logo"> <span>{{ config('app.name') }}</span>
             </a>
             <nav class="flex items-center gap-4 text-sm">
                 <a href="/" class="hover:text-gray-900">Home</a>

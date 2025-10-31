@@ -12,6 +12,10 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-4">
                     <h3 class="text-lg font-bold mb-4">All Zones Map</h3>
+                    <p class="text-sm text-gray-600 mb-3">This map shows all active fishing zones with their designated colors. Use the "Satellite View" toggle to switch base layers for better visual context when inspecting coastal features.</p>
+                    <div class="flex items-center justify-start mb-3">
+                        <button id="toggleSatellite" class="px-4 py-2 bg-blue-600 text-white rounded">Satellite View</button>
+                    </div>
                     <div id="globalMap" class="w-full h-[600px] lg:h-[700px] rounded-lg bg-white border-2 border-gray-200"></div>
                 </div>
             </div>
@@ -126,11 +130,31 @@ document.addEventListener('DOMContentLoaded', function() {
         const map = L.map('globalMap').setView([10.3157, 123.8854], 6);
         console.log('Map initialized');
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 19,
         }).addTo(map);
-        console.log('Tiles added');
+        console.log('OSM tiles added');
+
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles © Esri'
+        });
+        let isSatellite = false;
+        const toggleBtn = document.getElementById('toggleSatellite');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', function() {
+                if (isSatellite) {
+                    if (map.hasLayer && map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+                    osmLayer.addTo(map);
+                } else {
+                    if (map.hasLayer && map.hasLayer(osmLayer)) map.removeLayer(osmLayer);
+                    satelliteLayer.addTo(map);
+                }
+                isSatellite = !isSatellite;
+                this.textContent = isSatellite ? 'Standard View' : 'Satellite View';
+            });
+        }
 
         // All zones data from backend
         const zonesData = {!! json_encode($zones->map(function($zone) {

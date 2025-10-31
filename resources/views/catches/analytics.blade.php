@@ -28,6 +28,13 @@
   <div class="bg-white rounded border shadow overflow-hidden" 
        style="width: 1000px; max-width: 100%; margin: 0 auto;">
     <div id="analyticsMap" style="width: 100%; height: 500px; min-height: 500px;"></div>
+    <!-- Zone Legend -->
+    <div class="p-4 border-t border-gray-200">
+      <h3 class="text-sm font-semibold text-gray-700 mb-3">Zones</h3>
+      <div id="zoneLegend" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
+        <!-- Legend items will be populated here -->
+      </div>
+    </div>
   </div>
 </div>
 
@@ -46,7 +53,7 @@
         <div class="p-4 bg-white rounded border shadow">
             <div class="flex items-center justify-between">
                 <h2 class="font-semibold text-gray-700 text-sm mb-2">Gear Breakdown</h2>
-                <div class="text-xs"><a href="?format=csv&series=gear" class="text-sky-600">Download CSV (Gear by species)</a></div>
+                <button onclick="openCsvExportModal('gear')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
             </div>
             <div class="table-container">
                 <table class="w-full text-xs">
@@ -87,7 +94,7 @@
         <div class="p-4 bg-white rounded border shadow">
             <div class="flex items-center justify-between">
                 <h2 class="font-semibold text-gray-700 text-sm mb-2">Daily (last 14 days)</h2>
-                <div class="text-xs"><a href="?format=csv&series=daily&separated=species" class="text-sky-600">Download CSV (Daily by species)</a></div>
+                <button onclick="openCsvExportModal('daily')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
             </div>
             <div class="table-container">
                 <table class="w-full text-xs">
@@ -122,7 +129,7 @@
         <div class="p-4 bg-white rounded border shadow">
             <div class="flex items-center justify-between">
                 <h2 class="font-semibold text-gray-700 text-sm mb-2">Monthly (last 6)</h2>
-                <div class="text-xs"><a href="?format=csv&series=monthly&separated=species" class="text-sky-600">Download CSV (Monthly by species)</a></div>
+                <button onclick="openCsvExportModal('monthly')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
             </div>
             <div class="table-container">
                 <table class="w-full text-xs">
@@ -175,10 +182,7 @@
     <div class="p-4 bg-white rounded border shadow">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-gray-700 text-sm mb-2">Annual</h2>
-            <div class="text-xs space-x-3">
-                <a href="?format=csv&series=annual" class="text-sky-600">Download CSV</a>
-                <a href="?format=csv&series=annual&separated=species" class="text-sky-600">Download CSV (Annual by species)</a>
-            </div>
+            <button onclick="openCsvExportModal('annual')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
         </div>
         <table class="w-full text-xs">
             <thead><tr class="text-left text-gray-500"><th class="py-1">Year</th><th class="py-1">Qty (kg)</th><th class="py-1">Count</th></tr></thead>
@@ -448,6 +452,9 @@
                             }
                         }).addTo(map);
                     });
+
+                    // Update legend after zones are loaded
+                    updateZoneLegend(data.zones);
 
                     console.log('Zones loaded: ' + data.zones.length);
                     
@@ -737,8 +744,192 @@
         });
     }
 
+    function updateZoneLegend(zones) {
+        const legendContainer = document.getElementById('zoneLegend');
+        if (!legendContainer) return;
+
+        legendContainer.innerHTML = zones.map(zone => `
+            <div class="flex items-center gap-2 p-2 rounded hover:bg-gray-50 cursor-pointer transition" 
+                 title="${zone.name}"
+                 onclick="zoomToZone('${zone.name}')">
+                <div class="w-4 h-4 rounded" style="background-color: ${zone.color}; border: 2px solid ${zone.color}; flex-shrink: 0;"></div>
+                <span class="text-gray-700 truncate text-xs font-medium">${zone.name}</span>
+            </div>
+        `).join('');
+    }
+
+    function zoomToZone(zoneName) {
+        const targetLayer = zoneLayers.find(layer => layer.zoneName === zoneName);
+        if (targetLayer && map) {
+            const bounds = targetLayer.getBounds();
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+    }
+
     function closeZoneModal() {
         // No longer used - closing is handled by Leaflet
     }
+
+    // CSV Export Modal Functions
+    function openCsvExportModal(series) {
+        const modal = document.getElementById('csvExportModal');
+        const byYearSection = document.getElementById('csvByYearSection');
+        const byMonthSection = document.getElementById('csvByMonthSection');
+        
+        // Store the current series
+        window.csvExportSeries = series;
+        
+        // Hide all sections by default
+        byYearSection.style.display = 'none';
+        byMonthSection.style.display = 'none';
+        
+        if (series === 'gear') {
+            // Gear: no date selector needed
+            document.getElementById('csvExportTitle').textContent = 'Export Gear Data';
+        } else if (series === 'annual') {
+            // Annual: show only year selector
+            byYearSection.style.display = 'block';
+            byMonthSection.style.display = 'none';
+            document.getElementById('csvExportTitle').textContent = 'Export Annual Data';
+        } else {
+            // Daily/Monthly: show month selector
+            byYearSection.style.display = 'none';
+            byMonthSection.style.display = 'block';
+            document.getElementById('csvExportTitle').textContent = `Export ${series.charAt(0).toUpperCase() + series.slice(1)} Data`;
+        }
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeCSVModal() {
+        const modal = document.getElementById('csvExportModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function exportCSV(exportType) {
+        const series = window.csvExportSeries || 'daily';
+        let url = `?format=csv&series=${series}`;
+        let year = '';
+        let month = '';
+        
+        // Get values based on export type
+        if (exportType === 'year') {
+            // Annual: only year
+            year = document.getElementById('csvYear').value;
+            if (year) {
+                url += `&year=${year}`;
+            }
+        } else if (exportType === 'month') {
+            // Daily/Monthly: year and month
+            year = document.getElementById('csvYearMonth').value;
+            month = document.getElementById('csvMonth').value;
+            if (year && month) {
+                url += `&year=${year}&month=${month}`;
+            } else if (!year || !month) {
+                alert('Please select both year and month');
+                return;
+            }
+        }
+        // exportType === 'all' means export all data without filters
+        
+        url += '&separated=species';
+        window.location.href = url;
+        closeCSVModal();
+    }
+
+    // Populate years for CSV export
+    function populateCSVYears() {
+        const yearSelect = document.getElementById('csvYear');
+        const yearSelectMonth = document.getElementById('csvYearMonth');
+        const currentYear = new Date().getFullYear();
+        const yearOptions = '<option value="">Select Year</option>';
+        
+        let options = yearOptions;
+        for (let year = currentYear; year >= currentYear - 5; year--) {
+            options += `<option value="${year}">${year}</option>`;
+        }
+        
+        if (yearSelect) yearSelect.innerHTML = options;
+        if (yearSelectMonth) yearSelectMonth.innerHTML = options;
+    }
+
+    // Populate months
+    function populateCSVMonths() {
+        const monthSelect = document.getElementById('csvMonth');
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        monthSelect.innerHTML = '<option value="">Select Month</option>';
+        
+        months.forEach((month, index) => {
+            const option = document.createElement('option');
+            option.value = String(index + 1).padStart(2, '0');
+            option.textContent = month;
+            monthSelect.appendChild(option);
+        });
+    }
+
+    // Initialize year/month selects on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        populateCSVYears();
+        populateCSVMonths();
+    });
 </script>
+
+<!-- CSV Export Modal -->
+<div id="csvExportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="border-b border-gray-200 px-6 py-4">
+            <h3 id="csvExportTitle" class="text-lg font-semibold text-gray-900">Export Data</h3>
+        </div>
+        
+        <div class="p-6 space-y-4">
+            <p class="text-sm text-gray-600">Choose export scope:</p>
+            
+            <!-- Export All -->
+            <button onclick="exportCSV('all')" class="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200 font-medium text-sm">
+                📊 Export All Data
+            </button>
+            
+            <!-- Export By Year (Annual only) -->
+            <div id="csvByYearSection" style="display: none;">
+                <div class="pt-2 border-t border-gray-200">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Year</label>
+                    <select id="csvYear" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                        <option value="">Select Year</option>
+                    </select>
+                    <button onclick="exportCSV('year')" class="w-full mt-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200 font-medium text-sm">
+                        📅 Export by Year
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Export By Month (Daily/Monthly only) -->
+            <div id="csvByMonthSection" style="display: none;">
+                <div class="pt-2 border-t border-gray-200">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Year & Month</label>
+                    <div class="space-y-2">
+                        <select id="csvYearMonth" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            <option value="">Select Year</option>
+                        </select>
+                        <select id="csvMonth" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            <option value="">Select Month</option>
+                        </select>
+                    </div>
+                    <button onclick="exportCSV('month')" class="w-full mt-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition border border-green-200 font-medium text-sm">
+                        📆 Export by Month
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="border-t border-gray-200 px-6 py-3 bg-gray-50 rounded-b-lg flex justify-end">
+            <button onclick="closeCSVModal()" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition font-medium text-sm">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
 </x-app-layout>

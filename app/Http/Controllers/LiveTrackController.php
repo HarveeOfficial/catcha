@@ -99,16 +99,26 @@ class LiveTrackController extends Controller
     }
 
     /**
-     * Public: return new points for all active tracks since a given timestamp.
+     * Public: return new points for all tracks (active and recently ended) since a given timestamp.
      */
     public function activePoints(Request $request): JsonResponse
     {
         $since = $request->date('since');
 
-        // Fetch points for tracks that are currently active (no idle enforcement here).
+        // Fetch points for:
+        // 1. Currently active tracks (is_active=true, no ended_at)
+        // 2. Recently ended tracks (ended within last 24 hours)
         $points = LiveTrackPoint::query()
             ->whereHas('track', function ($q): void {
-                $q->where('is_active', true)->whereNull('ended_at');
+                $q->where(function ($query): void {
+                    // Active tracks
+                    $query->where('is_active', true)->whereNull('ended_at');
+                })->orWhere(function ($query): void {
+                    // Recently ended tracks (last 24 hours)
+                    $query->where('is_active', false)
+                        ->whereNotNull('ended_at')
+                        ->where('ended_at', '>', now()->subHours(24));
+                });
             })
             ->when($since !== null, function ($q) use ($since): void {
                 $q->where('recorded_at', '>', $since);
@@ -127,6 +137,7 @@ class LiveTrackController extends Controller
             if (! isset($grouped[$tid])) {
                 $grouped[$tid] = [
                     'publicId' => $t?->public_id,
+                    'isActive' => $t?->is_active ?? false,
                     'user' => [
                         'id' => $t?->user?->id,
                         'name' => $t?->user?->name,
@@ -158,9 +169,17 @@ class LiveTrackController extends Controller
         $idleWindowSeconds = 300; // 5 minutes
         $now = now();
 
+        // Get both active tracks and recently ended tracks
         $candidates = LiveTrack::query()
-            ->where('is_active', true)
-            ->whereNull('ended_at')
+            ->where(function ($q): void {
+                // Active tracks
+                $q->where('is_active', true)->whereNull('ended_at');
+            })->orWhere(function ($q): void {
+                // Recently ended tracks (last 24 hours)
+                $q->where('is_active', false)
+                    ->whereNotNull('ended_at')
+                    ->where('ended_at', '>', now()->subHours(24));
+            })
             ->with('user')
             ->latest('id')
             ->limit(50) // safety cap
@@ -183,6 +202,7 @@ class LiveTrackController extends Controller
 
             $activeTracks[] = [
                 'publicId' => $t->public_id,
+                'isActive' => $t->is_active,
                 'user' => [
                     'id' => $t->user?->id,
                     'name' => $t->user?->name,
