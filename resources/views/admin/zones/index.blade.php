@@ -48,7 +48,7 @@
                         @foreach ($zones as $zone)
                             <div class="border rounded-lg p-4 hover:shadow-lg transition">
                                 <div class="flex items-start justify-between mb-2">
-                                    <h3 class="text-xl font-semibold">{{ $zone->name }}</h3>
+                                    <h3 class="text-xl font-semibold cursor-pointer hover:text-blue-600 transition" onclick="zoomToZone({{ $zone->id }})">{{ $zone->name }}</h3>
                                     <div class="w-6 h-6 rounded" style="background-color: {{ $zone->color }}"></div>
                                 </div>
                                 
@@ -172,6 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const zoneLayers = [];
     const bounds = [];
+    const zoneMap = {}; // Store zone layers by ID for easy access
 
     // Add each zone to the map
     zones.forEach(zone => {
@@ -191,6 +192,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     layer.zoneColor = zone.color;
                     
                     zoneLayers.push(layer);
+                    
+                    // Store in zoneMap for zoom functionality
+                    if (!zoneMap[zone.id]) {
+                        zoneMap[zone.id] = [];
+                    }
+                    zoneMap[zone.id].push(layer);
                     
                     // Add bounds
                     if (layer.getBounds) {
@@ -313,6 +320,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const overlaps = detectOverlaps();
         console.log('Detected overlaps:', overlaps);
     }, 500);
+    
+    // Make zoomToZone function globally accessible
+    window.zoomToZone = function(zoneId) {
+        if (zoneMap[zoneId] && zoneMap[zoneId].length > 0) {
+            const layers = zoneMap[zoneId];
+            const group = L.featureGroup(layers);
+            map.fitBounds(group.getBounds().pad(0.1));
+            
+            // Scroll to map if necessary
+            document.getElementById('globalMap').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
     
     } catch (error) {
         console.error('Error initializing map:', error);
