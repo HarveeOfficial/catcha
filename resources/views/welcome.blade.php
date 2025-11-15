@@ -75,7 +75,7 @@
             <div class="relative mx-auto max-w-7xl px-6 pt-10 pb-24 lg:pt-16 lg:pb-32">
                 <div class="grid items-start lg:grid-cols-2 gap-8">
                     <div class="max-w-3xl order-2 lg:order-1">
-                        <span class="inline-flex items-center gap-1 rounded-full border border-sky-300/60 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-sky-700 dark:text-sky-300">CATCHA</span>
+                        {{-- <span class="inline-flex items-center gap-1 rounded-full border border-sky-300/60 dark:border-sky-500/30 bg-sky-50 dark:bg-sky-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-sky-700 dark:text-sky-300">CATCHA</span> --}}
                         <h1 class="mt-6 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-black leading-tight">CATCHA: Catch Assessment and Tracking for Coastal Harvest Activities for Improved Fishing Practices</h1>
                         <p class="mt-6 text-lg text-black leading-relaxed max-w-2xl">Log catches, Analyze catches, Guides, Weather forecast. All in one focused workspace.</p>
                         <div class="mt-8 flex flex-wrap items-center gap-4">

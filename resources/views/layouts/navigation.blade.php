@@ -35,11 +35,11 @@
                         {{ __('Guides') }}
                     </x-nav-link>
 
-                    @unless(auth()->check() && auth()->user()->role === 'fisher')
+                    {{-- @unless(auth()->check() && auth()->user()->role === 'fisher')
                         <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
                             {{ __('AI Chat') }}
                         </x-nav-link>
-                    @endunless
+                    @endunless --}}
                     @endunless
                     <x-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
                         {{ __('Heatmap') }}
@@ -129,9 +129,9 @@
             <x-responsive-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
                 {{ __('Guidance') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
+            {{-- <x-responsive-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
                 {{ __('AI Chat') }}
-            </x-responsive-nav-link>
+            </x-responsive-nav-link> --}}
             
             <x-responsive-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
                 {{ __('Seasonal Trends') }}

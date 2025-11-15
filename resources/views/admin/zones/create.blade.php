@@ -212,6 +212,17 @@
     .leaflet-draw-toolbar a {
         pointer-events: auto !important;
     }
+    .zone-popup .leaflet-popup-content {
+        margin: 0;
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    .zone-popup .leaflet-popup-content strong {
+        color: #1f2937;
+    }
+    .zone-popup .leaflet-popup-content small {
+        color: #6b7280;
+    }
 </style>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
@@ -274,7 +285,45 @@
                 colorText.value = colorInput.value;
             }
 
-            // Load existing geometry if available
+            // Load existing zones on the map
+            try {
+                const existingZones = {!! json_encode($existingZones->map(fn($z) => [
+                    'id' => $z->id,
+                    'name' => $z->name,
+                    'color' => $z->color,
+                    'geometry' => $z->geometry, // Already an array from Eloquent cast
+                ])->values()) !!};
+                
+                console.log('Existing zones:', existingZones);
+                
+                existingZones.forEach(zone => {
+                    console.log('Processing zone:', zone.name, 'geometry:', zone.geometry);
+                    if (zone.geometry && zone.geometry.features && zone.geometry.features.length > 0) {
+                        console.log('Adding zone to map:', zone.name);
+                        L.geoJSON(zone.geometry, {
+                            style: {
+                                color: zone.color,
+                                weight: 2,
+                                opacity: 0.6,
+                                fillOpacity: 0.15,
+                            },
+                            onEachFeature: function(feature, layer) {
+                                layer.bindPopup(`<strong>${zone.name}</strong><br/><small>Existing zone</small>`, { className: 'zone-popup' });
+                                layer.on('click', function() {
+                                    this.openPopup();
+                                });
+                            }
+                        }).addTo(map);
+                    } else {
+                        console.warn('Zone has no features:', zone.name);
+                    }
+                });
+                console.log('Zones loaded successfully');
+            } catch (e) {
+                console.error('Error loading existing zones:', e);
+            }
+
+            // Load existing geometry if available (for editing)
             @if (old('geometry'))
                 try {
                     const existing = {!! old('geometry') !!};

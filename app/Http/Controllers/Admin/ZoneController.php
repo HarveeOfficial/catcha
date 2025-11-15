@@ -22,8 +22,9 @@ class ZoneController extends Controller
     public function create(): View
     {
         $species = Species::all();
+        $existingZones = Zone::orderBy('name')->get(['id', 'name', 'color', 'description', 'geometry']);
 
-        return view('admin.zones.create', compact('species'));
+        return view('admin.zones.create', compact('species', 'existingZones'));
     }
 
     public function store(Request $request): \Illuminate\Http\RedirectResponse
