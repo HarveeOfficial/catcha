@@ -263,7 +263,7 @@
                     </tbody>
                 </table>
             </div>
-            @if(!empty($monthlyBySpecies) && $monthlyBySpecies->isNotEmpty())
+            {{-- @if(!empty($monthlyBySpecies) && $monthlyBySpecies->isNotEmpty())
                 <div class="mt-4 text-xs">
                     <div class="text-gray-600 font-medium mb-2">Monthly by species</div>
                     <div class="table-container">
@@ -279,7 +279,7 @@
                         </table>
                     </div>
                 </div>
-            @endif
+            @endif --}}
         </div>
     </div>
     <div class="p-4 bg-white rounded border shadow">
