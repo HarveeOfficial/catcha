@@ -5,22 +5,74 @@
 
 <div class="py-6 max-w-7xl mx-auto space-y-6">
 
-    <div class="grid md:grid-cols-4 gap-4 text-sm">
-        <div class="p-4 bg-white rounded border shadow">
-            <div class="text-gray-500 text-xs uppercase">Total Catches</div>
-            <div class="text-xl font-bold">{{ $totalSummary->catches }}</div>
+    <!-- Summary Report Section -->
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">📊 Catch Analytics Report</h2>
+        
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Total Catches -->
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-5 border border-blue-200 hover:shadow-md transition">
+                <p class="text-blue-700 text-xs font-semibold uppercase tracking-wide mb-2">Total Catches</p>
+                <p class="text-4xl font-bold text-blue-900">{{ $totalSummary->catches }}</p>
+                <p class="text-blue-600 text-xs mt-1">recorded</p>
+            </div>
+            
+            <!-- Total Quantity -->
+            <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg p-5 border border-cyan-200 hover:shadow-md transition">
+                <p class="text-cyan-700 text-xs font-semibold uppercase tracking-wide mb-2">Total Quantity</p>
+                <p class="text-4xl font-bold text-cyan-900">{{ number_format($totalSummary->total_qty, 2) }} <span class="text-lg">kg</span></p>
+                <p class="text-cyan-600 text-xs mt-1">total weight</p>
+            </div>
+            
+            <!-- Total Count -->
+            <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-5 border border-emerald-200 hover:shadow-md transition">
+                <p class="text-emerald-700 text-xs font-semibold uppercase tracking-wide mb-2">Fish Count</p>
+                <p class="text-4xl font-bold text-emerald-900">{{ $totalSummary->total_count }} <span class="text-lg">pcs</span></p>
+                <p class="text-emerald-600 text-xs mt-1">individual fish</p>
+            </div>
+            
+            <!-- Average Size -->
+            <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg p-5 border border-amber-200 hover:shadow-md transition">
+                <p class="text-amber-700 text-xs font-semibold uppercase tracking-wide mb-2">Average Size</p>
+                <p class="text-4xl font-bold text-amber-900">{{ $totalSummary->avg_size ? number_format($totalSummary->avg_size, 1) : '—' }} <span class="text-lg">cm</span></p>
+                <p class="text-amber-600 text-xs mt-1">per fish</p>
+            </div>
         </div>
-        <div class="p-4 bg-white rounded border shadow">
-            <div class="text-gray-500 text-xs uppercase">Total Quantity (kg)</div>
-            <div class="text-xl font-bold">{{ number_format($totalSummary->total_qty,2) }}</div>
-        </div>
-        <div class="p-4 bg-white rounded border shadow">
-            <div class="text-gray-500 text-xs uppercase">Total Count (pcs)</div>
-            <div class="text-xl font-bold">{{ $totalSummary->total_count }}</div>
-        </div>
-        <div class="p-4 bg-white rounded border shadow">
-            <div class="text-gray-500 text-xs uppercase">Avg Size (cm)</div>
-            <div class="text-xl font-bold">{{ $totalSummary->avg_size ? number_format($totalSummary->avg_size,1) : '—' }}</div>
+        
+        <!-- Insights Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Top Species -->
+            <div class="bg-blue-50 rounded-lg p-4 border border-blue-300">
+                <p class="text-blue-800 text-xs font-semibold uppercase tracking-wide mb-3">🎯 Top Species</p>
+                @if($topSpecies && $topSpecies->count() > 0)
+                    <p class="text-gray-900 font-semibold text-sm">{{ $topSpecies->first()?->species?->common_name ?? 'Unknown' }}</p>
+                    <p class="text-blue-700 text-xs mt-1">{{ number_format($topSpecies->first()?->qty_sum, 2) }} kg</p>
+                @else
+                    <p class="text-gray-500 italic text-sm">No data</p>
+                @endif
+            </div>
+            
+            <!-- Total Zones -->
+            <div class="bg-emerald-50 rounded-lg p-4 border border-emerald-300">
+                <p class="text-emerald-800 text-xs font-semibold uppercase tracking-wide mb-3">📍 Active Zones</p>
+                <p class="text-gray-900 font-semibold text-3xl">{{ $zoneBreakdown ? $zoneBreakdown->count() : 0 }}</p>
+                <p class="text-emerald-700 text-xs mt-1">zone{{ $zoneBreakdown && $zoneBreakdown->count() !== 1 ? 's' : '' }} with catches</p>
+            </div>
+            
+            <!-- Gear Types -->
+            <div class="bg-purple-50 rounded-lg p-4 border border-purple-300">
+                <p class="text-purple-800 text-xs font-semibold uppercase tracking-wide mb-3">🎣 Gear Types</p>
+                <p class="text-gray-900 font-semibold text-3xl">{{ $gearBreakdown ? $gearBreakdown->count() : 0 }}</p>
+                <p class="text-purple-700 text-xs mt-1">type{{ $gearBreakdown && $gearBreakdown->count() !== 1 ? 's' : '' }} in use</p>
+            </div>
+            
+            <!-- Average Weight -->
+            <div class="bg-orange-50 rounded-lg p-4 border border-orange-300">
+                <p class="text-orange-800 text-xs font-semibold uppercase tracking-wide mb-3">⚖️ Avg per Catch</p>
+                <p class="text-gray-900 font-semibold text-3xl">{{ $totalSummary->catches > 0 ? number_format($totalSummary->total_qty / $totalSummary->catches, 2) : 0 }}</p>
+                <p class="text-orange-700 text-xs mt-1">kg per catch</p>
+            </div>
         </div>
     </div>
 
@@ -145,7 +197,7 @@
         <div class="p-4 bg-white rounded border shadow">
             <div class="flex items-center justify-between">
                 <h2 class="font-semibold text-gray-700 text-sm mb-2">Daily (Today)</h2>
-                <button onclick="openCsvExportModal('daily')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
+                {{-- <button onclick="openCsvExportModal('daily')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button> --}}
             </div>
             <div class="table-container">
                 <table class="w-full text-xs">
