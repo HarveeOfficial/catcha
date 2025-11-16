@@ -119,7 +119,10 @@
 
         <!-- Zone Breakdown Table -->
         <div class="p-4 bg-white rounded border shadow">
-            <h2 class="font-semibold text-gray-700 text-sm mb-2">Zone Breakdown</h2>
+            <div class="flex items-center justify-between">
+                <h2 class="font-semibold text-gray-700 text-sm mb-2">Zone Breakdown</h2>
+                <button onclick="openCsvExportModal('zone')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
+            </div>
             <div class="table-container">
                 <table class="w-full text-xs">
                     <thead><tr class="text-left text-gray-500"><th class="py-1">Zone</th><th class="py-1">Qty (kg)</th><th class="py-1">Catches</th></tr></thead>
@@ -141,14 +144,14 @@
     <div class="grid md:grid-cols-2 gap-6">
         <div class="p-4 bg-white rounded border shadow">
             <div class="flex items-center justify-between">
-                <h2 class="font-semibold text-gray-700 text-sm mb-2">Daily (last 14 days)</h2>
+                <h2 class="font-semibold text-gray-700 text-sm mb-2">Daily (Today)</h2>
                 <button onclick="openCsvExportModal('daily')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
             </div>
             <div class="table-container">
                 <table class="w-full text-xs">
                     <thead><tr class="text-left text-gray-500"><th class="py-1">Date</th><th class="py-1">Qty (kg)</th><th class="py-1">Count</th></tr></thead>
                     <tbody>
-                    @forelse($dailySeries as $d)
+                    @forelse($dailySeries->sortByDesc('d') as $d)
                         <tr class="border-t"><td class="py-1">{{ $d->d }}</td><td class="py-1">{{ number_format($d->qty,2) }}</td><td class="py-1">{{ $d->catch_count }}</td></tr>
                     @empty
                         <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
@@ -163,7 +166,7 @@
                         <table class="w-full text-xs">
                             <thead><tr class="text-left text-gray-500"><th class="py-1">Date</th><th class="py-1">Species</th><th class="py-1">Qty</th><th class="py-1">Count</th></tr></thead>
                             <tbody>
-                            @foreach($dailyBySpecies as $date => $rows)
+                            @foreach($dailyBySpecies->sortByDesc(fn($group) => $group->first()->d) as $date => $rows)
                                 @foreach($rows as $r)
                                     <tr class="border-t"><td class="py-1">{{ $date }}</td><td class="py-1">{{ $r->species?->common_name ?? $r->species_id }}</td><td class="py-1">{{ number_format($r->qty,2) }}</td><td class="py-1">{{ $r->catch_count }}</td></tr>
                                 @endforeach
@@ -419,14 +422,12 @@
                 .then(resp => resp.json())
                 .then(data => {
                     if (!data || !data.zones || data.zones.length === 0) {
-                        console.log('No zones to display');
                         return;
                     }
 
                     // Add zones to map
                     data.zones.forEach(zone => {
                         if (!zone.geometry) {
-                            console.warn('Zone has no geometry:', zone.id);
                             return;
                         }
 
@@ -461,20 +462,17 @@
 
                     // Update legend after zones are loaded
                     updateZoneLegend(data.zones);
-
-                    console.log('Zones loaded: ' + data.zones.length);
                     
                     // Detect overlaps after all zones are added
                     detectOverlaps();
                 })
-                .catch(err => console.error('Error loading zones:', err));
+                .catch(err => {});
 
             // Fetch catch points
             fetch('/catches/heatmap/data')
                 .then(resp => resp.json())
                 .then(data => {
                     if (!data || !data.points || data.points.length === 0) {
-                        console.log('No catches to display');
                         return;
                     }
 
@@ -516,7 +514,7 @@
                                         wrongSpeciesZones.push(zone.name);
                                     }
                                 } catch (e) {
-                                    console.log('Error checking zone geometry:', e);
+                                    // Error silently
                                 }
                             }
                         });
@@ -573,12 +571,11 @@
                         marker.bindPopup(popupHtml);
                     });
 
-                    console.log('Catches loaded: ' + Math.min(data.points.length, 50));
                 })
-                .catch(err => console.error('Error loading catches:', err));
+                .catch(err => {});
 
         } catch (e) {
-            console.error('Map initialization error:', e);
+            // Error silently
         }
     }
 
@@ -675,22 +672,15 @@
                         });
                     }
                 } catch (e) {
-                    console.log('Error detecting overlap:', e);
+                    // Error silently
                 }
             }
-        }
-        
-        if (overlaps.length > 0) {
-            console.log('Overlapping zones detected:', overlaps);
         }
     }
 
     // Zone Popup Functions - Leaflet popup on map
     function showZonePopup(layer, zone) {
-        console.log('Opening popup for zone:', zone);
-
         if (!zone.species || zone.species.length === 0) {
-            console.log('No species data for zone:', zone);
             layer.setPopupContent(`
                 <div class="zone-popup">
                     <div class="zone-popup-header">
@@ -705,8 +695,6 @@
             layer.openPopup();
             return;
         }
-
-        console.log('Species found:', zone.species);
 
         // Build species chips HTML
         let chipsHtml = zone.species.map(sp => 
@@ -944,9 +932,37 @@
         } else {
             document.getElementById('csvExportTitle').textContent = `Export ${series.charAt(0).toUpperCase() + series.slice(1)} Data`;
         }
+
+        // Show/hide month/year filters based on series type
+        const monthYearFilters = document.getElementById('monthYearFilters');
+        if (series === 'monthly' || series === 'daily') {
+            monthYearFilters.classList.remove('hidden');
+            populateYearSelect();
+        } else {
+            monthYearFilters.classList.add('hidden');
+        }
         
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+    }
+
+    function populateYearSelect() {
+        const yearSelect = document.getElementById('csvYearSelect');
+        const currentYear = new Date().getFullYear();
+        
+        // Clear existing options except the first one
+        while (yearSelect.options.length > 1) {
+            yearSelect.remove(1);
+        }
+        
+        // Add years from current year back 5 years
+        for (let i = 0; i < 5; i++) {
+            const year = currentYear - i;
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearSelect.appendChild(option);
+        }
     }
 
     function closeCSVModal() {
@@ -958,6 +974,19 @@
     function exportCSV(exportType) {
         const series = window.csvExportSeries || 'monthly';
         let url = `?format=csv&series=${series}`;
+        
+        // Add month/year parameters if available
+        if (series === 'monthly' || series === 'daily') {
+            const year = document.getElementById('csvYearSelect').value;
+            const month = document.getElementById('csvMonthSelect').value;
+            
+            if (year) {
+                url += `&year=${year}`;
+            }
+            if (month) {
+                url += `&month=${month}`;
+            }
+        }
         
         if (exportType === 'all') {
             url += '&separated=species';
@@ -976,6 +1005,34 @@
         </div>
         
         <div class="p-6 space-y-4">
+            <!-- Month/Year filters for monthly/daily exports -->
+            <div id="monthYearFilters" class="hidden space-y-3 pb-4 border-b border-gray-200">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                    <select id="csvYearSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All Years</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                    <select id="csvMonthSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All Months</option>
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08">August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                </div>
+            </div>
+
             <button onclick="exportCSV('all')" class="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200 font-medium text-sm">
                 📊 Export All Data
             </button>
@@ -988,5 +1045,6 @@
         </div>
     </div>
 </div>
+
 
 </x-app-layout>

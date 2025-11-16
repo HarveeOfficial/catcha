@@ -64,6 +64,7 @@ class CatchAnalyticsController extends Controller
         $totalSummary = (clone $base)->selectRaw('COUNT(*) as catches, COALESCE(SUM(quantity),0) as total_qty, COALESCE(SUM(count),0) as total_count, AVG(avg_size_cm) as avg_size')->first();
 
         $topSpecies = (clone $base)
+            ->whereYear('caught_at', now()->year)
             ->selectRaw('species_id, COALESCE(SUM(quantity),0) as qty_sum, COUNT(*) as catches_count')
             ->whereNotNull('species_id')
             ->groupBy('species_id')
@@ -73,13 +74,16 @@ class CatchAnalyticsController extends Controller
             ->get();
 
         $dailySeries = (clone $base)
+            ->whereDate('caught_at', today())
             ->selectRaw("{$dateExprDay} as d, SUM(quantity) as qty, SUM(count) as catch_count")
             ->groupBy('d')
             ->orderBy('d', 'desc')
-            ->limit(14)
-            ->get();
+            ->get()
+            ->sortByDesc('d')
+            ->values();
 
         $dailyBySpecies = (clone $base)
+            ->whereDate('caught_at', today())
             ->whereNotNull('species_id')
             ->selectRaw("{$dateExprDay} as d, species_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count")
             ->groupBy('d', 'species_id')
@@ -255,7 +259,10 @@ class CatchAnalyticsController extends Controller
                     foreach ($species as $sp) {
                         $qty = $map[$ym][$sp->id]['qty'] ?? 0;
                         $cnt = $map[$ym][$sp->id]['count'] ?? 0;
-                        $rows[] = [$ym, $sp->common_name, (string) $qty, (string) $cnt];
+                        // Only include rows with qty > 0
+                        if ($qty > 0) {
+                            $rows[] = [$ym, $sp->common_name, (string) $qty, (string) $cnt];
+                        }
                     }
                 }
 
@@ -313,7 +320,10 @@ class CatchAnalyticsController extends Controller
                         foreach ($species as $sp) {
                             $qty = $map[$d][$sp->id]['qty'] ?? 0;
                             $cnt = $map[$d][$sp->id]['count'] ?? 0;
-                            $rows[] = [$d, $sp->common_name, (string) $qty, (string) $cnt];
+                            // Only include rows with qty > 0
+                            if ($qty > 0) {
+                                $rows[] = [$d, $sp->common_name, (string) $qty, (string) $cnt];
+                            }
                         }
                     }
 
@@ -348,9 +358,17 @@ class CatchAnalyticsController extends Controller
                     return response()->stream($callback, 200, $headers);
                 }
 
-                $rows = (clone $dailySeries)->sortByDesc('d')->values();
+                // Recalculate daily series with year/month filters applied
+                $dailySeriesFiltered = (clone $csvBase)
+                    ->selectRaw("{$dateExprDay} as d, SUM(quantity) as qty, SUM(count) as catch_count")
+                    ->groupBy('d')
+                    ->orderBy('d', 'desc')
+                    ->get();
+
+                $rows = $dailySeriesFiltered->sortByDesc('d')->values();
                 $header = ['Period', 'Qty(Kg)', 'Count'];
-                $iter = $rows->map(fn ($r) => [$r->d, (string) $r->qty, (string) $r->catch_count]);
+                // Filter to only include rows with qty > 0
+                $iter = $rows->filter(fn ($r) => $r->qty > 0)->map(fn ($r) => [$r->d, (string) $r->qty, (string) $r->catch_count]);
             } elseif ($series === 'annual') {
                 // support annual separated by species if requested
                 if ($separated) {
@@ -405,10 +423,60 @@ class CatchAnalyticsController extends Controller
                 $rows = $annualSeries->sortByDesc('y')->values();
                 $header = ['Period', 'Qty(Kg)', 'Count'];
                 $iter = $rows->map(fn ($r) => [$r->y, (string) $r->qty, (string) $r->catch_count]);
+            } elseif ($series === 'zone') {
+                // Zone breakdown CSV export
+                $zoneData = (clone $csvBase)
+                    ->whereNotNull('fish_catches.zone_id')
+                    ->with('zone')
+                    ->selectRaw('fish_catches.zone_id, COUNT(*) as catches, SUM(fish_catches.quantity) as qty')
+                    ->groupBy('fish_catches.zone_id')
+                    ->orderByDesc('qty')
+                    ->get()
+                    ->map(function ($item) {
+                        return (object) [
+                            'zone_id' => $item->zone_id,
+                            'catches' => $item->catches,
+                            'qty' => $item->qty,
+                            'zone' => $item->zone,
+                        ];
+                    });
+
+                $header = ['Zone', 'Qty(Kg)', 'Catches'];
+                $rows = $zoneData->map(fn ($z) => [$z->zone?->name ?? 'Unknown', (string) $z->qty, (string) $z->catches])->toArray();
+                $filename = sprintf('catch-analytics-zones-%s.csv', now()->format('YmdHis'));
+                $headers = [
+                    'Content-Type' => 'text/csv; charset=utf-8',
+                    'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+                ];
+
+                if (app()->runningUnitTests()) {
+                    $fp = fopen('php://temp', 'r+');
+                    fputcsv($fp, $header);
+                    foreach ($rows as $r) {
+                        fputcsv($fp, $r);
+                    }
+                    rewind($fp);
+                    $content = stream_get_contents($fp);
+                    fclose($fp);
+
+                    return response($content, 200, $headers);
+                }
+
+                $callback = function () use ($header, $rows) {
+                    $out = fopen('php://output', 'w');
+                    fputcsv($out, $header);
+                    foreach ($rows as $r) {
+                        fputcsv($out, $r);
+                    }
+                    fclose($out);
+                };
+
+                return response()->stream($callback, 200, $headers);
             } else {
                 $rows = $monthlySeries->sortByDesc('ym')->values();
                 $header = ['Period', 'Qty(Kg)', 'Count'];
-                $iter = $rows->map(fn ($r) => [$r->ym, (string) $r->qty, (string) $r->catch_count]);
+                // Filter to only include rows with qty > 0
+                $iter = $rows->filter(fn ($r) => $r->qty > 0)->map(fn ($r) => [$r->ym, (string) $r->qty, (string) $r->catch_count]);
             }
 
             $filename = sprintf('catch-analytics-%s-%s.csv', $series, now()->format('YmdHis'));
