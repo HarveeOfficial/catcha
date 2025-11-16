@@ -7,7 +7,7 @@
 
     <!-- Summary Report Section -->
     <div class="bg-white rounded-lg shadow-md p-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">📊 Catch Analytics Report</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Catch Analytics Report</h2>
         
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -44,7 +44,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Top Species -->
             <div class="bg-blue-50 rounded-lg p-4 border border-blue-300">
-                <p class="text-blue-800 text-xs font-semibold uppercase tracking-wide mb-3">🎯 Top Species</p>
+                <p class="text-blue-800 text-xs font-semibold uppercase tracking-wide mb-3">Top Species</p>
                 @if($topSpecies && $topSpecies->count() > 0)
                     <p class="text-gray-900 font-semibold text-sm">{{ $topSpecies->first()?->species?->common_name ?? 'Unknown' }}</p>
                     <p class="text-blue-700 text-xs mt-1">{{ number_format($topSpecies->first()?->qty_sum, 2) }} kg</p>
@@ -55,21 +55,21 @@
             
             <!-- Total Zones -->
             <div class="bg-emerald-50 rounded-lg p-4 border border-emerald-300">
-                <p class="text-emerald-800 text-xs font-semibold uppercase tracking-wide mb-3">📍 Active Zones</p>
+                <p class="text-emerald-800 text-xs font-semibold uppercase tracking-wide mb-3">Active Zones</p>
                 <p class="text-gray-900 font-semibold text-3xl">{{ $zoneBreakdown ? $zoneBreakdown->count() : 0 }}</p>
                 <p class="text-emerald-700 text-xs mt-1">zone{{ $zoneBreakdown && $zoneBreakdown->count() !== 1 ? 's' : '' }} with catches</p>
             </div>
             
             <!-- Gear Types -->
             <div class="bg-purple-50 rounded-lg p-4 border border-purple-300">
-                <p class="text-purple-800 text-xs font-semibold uppercase tracking-wide mb-3">🎣 Gear Types</p>
+                <p class="text-purple-800 text-xs font-semibold uppercase tracking-wide mb-3">Gear Types</p>
                 <p class="text-gray-900 font-semibold text-3xl">{{ $gearBreakdown ? $gearBreakdown->count() : 0 }}</p>
                 <p class="text-purple-700 text-xs mt-1">type{{ $gearBreakdown && $gearBreakdown->count() !== 1 ? 's' : '' }} in use</p>
             </div>
             
             <!-- Average Weight -->
             <div class="bg-orange-50 rounded-lg p-4 border border-orange-300">
-                <p class="text-orange-800 text-xs font-semibold uppercase tracking-wide mb-3">⚖️ Avg per Catch</p>
+                <p class="text-orange-800 text-xs font-semibold uppercase tracking-wide mb-3">Avg per Catch</p>
                 <p class="text-gray-900 font-semibold text-3xl">{{ $totalSummary->catches > 0 ? number_format($totalSummary->total_qty / $totalSummary->catches, 2) : 0 }}</p>
                 <p class="text-orange-700 text-xs mt-1">kg per catch</p>
             </div>
