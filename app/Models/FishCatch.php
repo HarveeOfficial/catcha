@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ZoneService;
 use Illuminate\Database\Eloquent\Model;
 
 class FishCatch extends Model
@@ -21,6 +22,20 @@ class FishCatch extends Model
         'longitude' => 'float',
         'geo_accuracy_m' => 'float',
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::created(function (FishCatch $catch): void {
+            if ($catch->latitude !== null && $catch->longitude !== null && $catch->zone_id === null) {
+                $zone = app(ZoneService::class)->findZoneForCoordinates($catch->latitude, $catch->longitude);
+                if ($zone) {
+                    $catch->update(['zone_id' => $zone->id]);
+                }
+            }
+        });
+    }
 
     public function user()
     {

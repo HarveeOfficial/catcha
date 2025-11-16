@@ -11,6 +11,11 @@ class HeatmapController extends Controller
 {
     public function data(Request $request)
     {
+        // Experts are not allowed to access heatmap
+        if (Auth::check() && Auth::user()->isExpert()) {
+            abort(403, 'Experts cannot access heatmap.');
+        }
+
         $base = FishCatch::query()->whereNotNull('latitude')->whereNotNull('longitude');
         // Guests see aggregated public data across all users. Authenticated non-experts previously
         // saw only their own data; for public landing heatmap, expose anonymized aggregate for all.
@@ -152,6 +157,11 @@ class HeatmapController extends Controller
 
     public function view()
     {
+        // Experts are not allowed to access heatmap
+        if (Auth::check() && Auth::user()->isExpert()) {
+            abort(403, 'Experts cannot access heatmap.');
+        }
+
         return view('catches.heatmap');
     }
 

@@ -80,6 +80,7 @@ class CatchController extends Controller
             $data['geohash'] = $this->encodeGeohash((float) $data['latitude'], (float) $data['longitude']);
         }
         $catch = FishCatch::create($data);
+
         if ($request->expectsJson() || $request->header('X-Offline-Sync')) {
             return response()->json([
                 'status' => 'ok',

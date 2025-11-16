@@ -36,10 +36,6 @@ class GearTypeSeeder extends Seeder
             ['Scoop Net', 'Opo / Salading', 'Small basket-like net for scooping fish'],
             ['Pound Net', 'Balas', 'Fixed net arrangement with lead and pound sections'],
 
-            // Explosives and chemicals (illegal)
-            ['Dynamite / Blast', 'Pukaw', 'Explosive device (illegal in most areas)'],
-            ['Poison / Cyanide', 'Lason', 'Chemical poison (illegal in most areas)'],
-
             // Spears and harpooning
             ['Spear', 'Sibat / Pangga', 'Pointed weapon for stabbing fish'],
             ['Fish Wheel', 'Pandal', 'Rotating wheel with baskets to catch fish'],

@@ -14,9 +14,14 @@ class CatchAnalyticsController extends Controller
     {
         $user = Auth::user();
 
-        // Scope: fishers see only their own catches; experts/admins see all (optionally filter by user)
+        // Experts are not allowed to access analytics
+        if ($user->isExpert()) {
+            abort(403, 'Experts cannot access analytics.');
+        }
+
+        // Scope: fishers see only their own catches; admins see all (optionally filter by user)
         $base = FishCatch::query();
-        if (! $user->isExpert() && ! $user->isAdmin()) {
+        if (! $user->isAdmin()) {
             $base->where('user_id', $user->id);
         } elseif ($request->filled('user')) {
             $base->whereHas('user', function ($q) use ($request) {
@@ -130,9 +135,26 @@ class CatchAnalyticsController extends Controller
             ->get()
             ->groupBy('gear_type');
 
+        // Zone breakdown
+        $zoneBreakdown = (clone $base)
+            ->whereNotNull('fish_catches.zone_id')
+            ->with('zone')
+            ->selectRaw('fish_catches.zone_id, COUNT(*) as catches, SUM(fish_catches.quantity) as qty')
+            ->groupBy('fish_catches.zone_id')
+            ->orderByDesc('qty')
+            ->get()
+            ->map(function ($item) {
+                return (object) [
+                    'zone_id' => $item->zone_id,
+                    'catches' => $item->catches,
+                    'qty' => $item->qty,
+                    'zone' => $item->zone,
+                ];
+            });
+
         // Provide species list for filter UI if needed
         $speciesList = Species::orderBy('common_name')->get(['id', 'common_name']);
-        
+
         // If CSV requested, stream the selected series as per-column CSV
         // also support monthly separated by species via ?format=csv&series=monthly&separated=species
         if ($request->input('format') === 'csv') {
@@ -142,13 +164,13 @@ class CatchAnalyticsController extends Controller
             // Handle year/month filtering for CSV export
             $yearFilter = $request->input('year');
             $monthFilter = $request->input('month');
-            
+
             // If year/month specified, filter the data accordingly
             $csvBase = clone $base;
             if ($yearFilter) {
-                $csvBase->whereRaw("YEAR(caught_at) = ?", [$yearFilter]);
+                $csvBase->whereRaw('YEAR(caught_at) = ?', [$yearFilter]);
                 if ($monthFilter) {
-                    $csvBase->whereRaw("MONTH(caught_at) = ?", [$monthFilter]);
+                    $csvBase->whereRaw('MONTH(caught_at) = ?', [$monthFilter]);
                 }
             }
 
@@ -157,7 +179,7 @@ class CatchAnalyticsController extends Controller
                 $header = ['Gear', 'Species', 'Qty(Kg)', 'Count'];
                 $rows = [];
                 $speciesMap = \App\Models\Species::pluck('common_name', 'id')->all();
-                
+
                 // Use filtered base for gear export
                 $gearSpeciesFiltered = (clone $csvBase)
                     ->join('gear_types', 'fish_catches.gear_type_id', '=', 'gear_types.id')
@@ -168,7 +190,7 @@ class CatchAnalyticsController extends Controller
                     ->orderByDesc('qty')
                     ->get()
                     ->groupBy('gear_type');
-                    
+
                 foreach ($gearSpeciesFiltered as $gear => $rowsForGear) {
                     foreach ($rowsForGear as $r) {
                         $rows[] = [$gear, $speciesMap[$r->species_id] ?? $r->species_id, (string) $r->qty, (string) $r->catch_count];
@@ -209,19 +231,19 @@ class CatchAnalyticsController extends Controller
             if ($series === 'monthly' && $separated) {
                 // Long format: one row per (month, species) with a Species column
                 $species = \App\Models\Species::orderBy('common_name')->get(['id', 'common_name']);
-                
+
                 $aggregated = (clone $csvBase)
                     ->whereNotNull('species_id')
                     ->selectRaw("{$dateExprMonth} as ym, species_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count")
                     ->groupBy('ym', 'species_id')
                     ->get();
-                
+
                 // If year/month filter applied, only get that specific month
                 $months = $aggregated->pluck('ym')->unique()->sortDesc()->values()->all();
                 if (empty($months)) {
                     $months = [];
                 }
-                
+
                 $map = [];
                 foreach ($aggregated as $a) {
                     $map[$a->ym][$a->species_id] = ['qty' => $a->qty, 'count' => $a->catch_count];
@@ -271,13 +293,13 @@ class CatchAnalyticsController extends Controller
             if ($series === 'daily') {
                 if ($separated) {
                     $species = \App\Models\Species::orderBy('common_name')->get(['id', 'common_name']);
-                    
+
                     $aggregated = (clone $csvBase)
                         ->whereNotNull('species_id')
                         ->selectRaw("{$dateExprDay} as d, species_id, COALESCE(SUM(quantity),0) as qty, COALESCE(SUM(count),0) as catch_count")
                         ->groupBy('d', 'species_id')
                         ->get();
-                    
+
                     $days = $aggregated->pluck('d')->unique()->sortDesc()->values()->all();
 
                     $map = [];
@@ -430,6 +452,7 @@ class CatchAnalyticsController extends Controller
             'annualSeries' => $annualSeries,
             'gearBreakdown' => $gearBreakdown,
             'gearSpecies' => $gearSpecies,
+            'zoneBreakdown' => $zoneBreakdown,
             'speciesList' => $speciesList,
         ]);
     }

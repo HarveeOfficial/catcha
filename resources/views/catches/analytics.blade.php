@@ -2,6 +2,7 @@
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">Catch Analytics</h2>
     </x-slot>
+
 <div class="py-6 max-w-7xl mx-auto space-y-6">
 
     <div class="grid md:grid-cols-4 gap-4 text-sm">
@@ -23,9 +24,36 @@
         </div>
     </div>
 
+    <!-- Charts Section -->
+    <div class="grid md:grid-cols-3 gap-6">
+        <!-- Species Breakdown Pie Chart -->
+        <div class="p-4 bg-white rounded border shadow">
+            <h2 class="font-semibold text-gray-700 text-sm mb-4">Species Breakdown</h2>
+            <canvas id="speciesChart" style="max-height: 300px;"></canvas>
+        </div>
+
+        <!-- Gear Breakdown Pie Chart -->
+        <div class="p-4 bg-white rounded border shadow">
+            <h2 class="font-semibold text-gray-700 text-sm mb-4">Gear Breakdown</h2>
+            <canvas id="gearChart" style="max-height: 300px;"></canvas>
+        </div>
+
+        <!-- Zone Breakdown Pie Chart -->
+        <div class="p-4 bg-white rounded border shadow">
+            <h2 class="font-semibold text-gray-700 text-sm mb-4">Zone Breakdown</h2>
+            @if($zoneBreakdown && $zoneBreakdown->count() > 0)
+                <canvas id="zoneChart" style="max-height: 300px;"></canvas>
+            @else
+                <div class="flex items-center justify-center h-64 text-gray-400">
+                    <p>No zone data available</p>
+                </div>
+            @endif
+        </div>
+    </div>
+
     <!-- Map Section - Full Width -->
    <div style="display: flex; justify-content: center;">
-  <div class="bg-white rounded border shadow overflow-hidden" 
+  <div class="bg-white rounded border shadow overflow-hidden"
        style="width: 1000px; max-width: 100%; margin: 0 auto;">
     <div id="analyticsMap" style="width: 100%; height: 500px; min-height: 500px;"></div>
     <!-- Zone Legend -->
@@ -88,8 +116,28 @@
                 </table>
             </div>
         </div>
-    </div>
 
+        <!-- Zone Breakdown Table -->
+        <div class="p-4 bg-white rounded border shadow">
+            <h2 class="font-semibold text-gray-700 text-sm mb-2">Zone Breakdown</h2>
+            <div class="table-container">
+                <table class="w-full text-xs">
+                    <thead><tr class="text-left text-gray-500"><th class="py-1">Zone</th><th class="py-1">Qty (kg)</th><th class="py-1">Catches</th></tr></thead>
+                    <tbody>
+                    @forelse($zoneBreakdown as $z)
+                        <tr class="border-t hover:bg-gray-50">
+                            <td class="py-1 font-medium">{{ $z->zone?->name ?? 'Unknown' }}</td>
+                            <td class="py-1">{{ number_format($z->qty, 2) }}</td>
+                            <td class="py-1">{{ $z->catches }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
     <div class="grid md:grid-cols-2 gap-6">
         <div class="p-4 bg-white rounded border shadow">
             <div class="flex items-center justify-between">
@@ -215,6 +263,10 @@
 </div>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
 <style>
     #analyticsMap {
         position: relative;
@@ -275,41 +327,7 @@
         overflow-y: auto;
         position: relative;
     }
-</style>
 
-<!-- Zone Detail Modal -->
-<div id="zoneModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="zone-modal-content bg-white rounded-lg shadow-lg w-full max-w-md">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-            <h3 id="modalZoneName" class="text-lg font-bold text-gray-900"></h3>
-            <button onclick="closeZoneModal()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
-        </div>
-
-        <div class="p-6 space-y-4">
-            <!-- Search Input -->
-            <div>
-                <label for="zoneSpeciesSearch" class="block text-sm font-semibold mb-2 text-gray-700">Search Fish Species</label>
-                <input
-                    type="text"
-                    id="zoneSpeciesSearch"
-                    placeholder="Search by name..."
-                    class="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                >
-            </div>
-
-            <!-- Species Display as Chips -->
-            <div id="modalSpeciesList" class="p-3 bg-gray-50 rounded-lg min-h-[60px]">
-                <!-- Species chips will be populated here -->
-            </div>
-
-            <div class="text-xs text-gray-600 pt-2 border-t">
-                <p>Fish species found in this zone based on catch records</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
     /* Custom Leaflet popup styling */
     .zone-popup {
         font-family: inherit;
@@ -370,8 +388,6 @@
         color: #6b7280;
     }
 </style>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <script>
     let zoneLayers = [];
@@ -416,16 +432,6 @@
 
                         const color = zone.color || '#00FF00';
                         const geom = typeof zone.geometry === 'string' ? JSON.parse(zone.geometry) : zone.geometry;
-                        
-                        // Build species list for popup
-                        let speciesList = '';
-                        if (zone.species && zone.species.length > 0) {
-                            speciesList = '<div class="mt-2 text-sm"><strong>Fish Species:</strong><ul class="list-disc list-inside">';
-                            zone.species.forEach(sp => {
-                                speciesList += `<li>${sp.name}: ${sp.qty.toFixed(1)} kg (${sp.catches} catch${sp.catches !== 1 ? 'es' : ''})</li>`;
-                            });
-                            speciesList += '</ul></div>';
-                        }
                         
                         L.geoJSON(geom, {
                             style: {
@@ -473,7 +479,7 @@
                     }
 
                     // Add markers for recent catches
-                    data.points.slice(0, 50).forEach(point => {
+                    data.points.slice(0, 500).forEach(point => {
                         const lat = point.lat;
                         const lng = point.lng;
                         const weight = point.weight;
@@ -766,35 +772,176 @@
         }
     }
 
-    function closeZoneModal() {
-        // No longer used - closing is handled by Leaflet
+    // Chart colors matching the design
+    const chartColors = {
+        species: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'],
+        gear: ['#3b82f6', '#06b6d4', '#6366f1', '#84cc16', '#f59e0b', '#ef4444'],
+        zone: ['#3b82f6', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#10b981', '#f59e0b']
+    };
+
+    // Initialize charts on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+    });
+
+    function initializeCharts() {
+        // Species Chart
+        @if($topSpecies && $topSpecies->count() > 0)
+            const speciesCtx = document.getElementById('speciesChart');
+            if (speciesCtx) {
+                new Chart(speciesCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [
+                            @foreach($topSpecies as $row)
+                                '{{ $row->species?->common_name ?? 'Unknown' }}',
+                            @endforeach
+                        ],
+                        datasets: [{
+                            data: [
+                                @foreach($topSpecies as $row)
+                                    {{ $row->qty_sum }},
+                                @endforeach
+                            ],
+                            backgroundColor: chartColors.species,
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 11 },
+                                    padding: 8,
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed + ' kg';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        @endif
+
+        // Gear Chart
+        @if($gearBreakdown && $gearBreakdown->count() > 0)
+            const gearCtx = document.getElementById('gearChart');
+            if (gearCtx) {
+                new Chart(gearCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [
+                            @foreach($gearBreakdown as $g)
+                                '{{ $g->gear_type }}',
+                            @endforeach
+                        ],
+                        datasets: [{
+                            data: [
+                                @foreach($gearBreakdown as $g)
+                                    {{ $g->qty }},
+                                @endforeach
+                            ],
+                            backgroundColor: chartColors.gear,
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 11 },
+                                    padding: 8,
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed + ' kg';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        @endif
+
+        // Zone Chart
+        @if($zoneBreakdown && $zoneBreakdown->count() > 0)
+            const zoneCtx = document.getElementById('zoneChart');
+            if (zoneCtx) {
+                new Chart(zoneCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: [
+                            @foreach($zoneBreakdown as $z)
+                                '{{ $z->zone?->name ?? 'Unknown' }}',
+                            @endforeach
+                        ],
+                        datasets: [{
+                            data: [
+                                @foreach($zoneBreakdown as $z)
+                                    {{ $z->qty }},
+                                @endforeach
+                            ],
+                            backgroundColor: chartColors.zone,
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 11 },
+                                    padding: 8,
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.label + ': ' + context.parsed + ' kg';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        @endif
     }
 
     // CSV Export Modal Functions
     function openCsvExportModal(series) {
         const modal = document.getElementById('csvExportModal');
-        const byYearSection = document.getElementById('csvByYearSection');
-        const byMonthSection = document.getElementById('csvByMonthSection');
         
         // Store the current series
         window.csvExportSeries = series;
         
-        // Hide all sections by default
-        byYearSection.style.display = 'none';
-        byMonthSection.style.display = 'none';
-        
-        if (series === 'gear') {
-            // Gear: no date selector needed
-            document.getElementById('csvExportTitle').textContent = 'Export Gear Data';
+        if (series === 'zone-summary') {
+            document.getElementById('csvExportTitle').textContent = 'Export Zone Summary';
         } else if (series === 'annual') {
-            // Annual: show only year selector
-            byYearSection.style.display = 'block';
-            byMonthSection.style.display = 'none';
             document.getElementById('csvExportTitle').textContent = 'Export Annual Data';
         } else {
-            // Daily/Monthly: show month selector
-            byYearSection.style.display = 'none';
-            byMonthSection.style.display = 'block';
             document.getElementById('csvExportTitle').textContent = `Export ${series.charAt(0).toUpperCase() + series.slice(1)} Data`;
         }
         
@@ -809,72 +956,16 @@
     }
 
     function exportCSV(exportType) {
-        const series = window.csvExportSeries || 'daily';
+        const series = window.csvExportSeries || 'monthly';
         let url = `?format=csv&series=${series}`;
-        let year = '';
-        let month = '';
         
-        // Get values based on export type
-        if (exportType === 'year') {
-            // Annual: only year
-            year = document.getElementById('csvYear').value;
-            if (year) {
-                url += `&year=${year}`;
-            }
-        } else if (exportType === 'month') {
-            // Daily/Monthly: year and month
-            year = document.getElementById('csvYearMonth').value;
-            month = document.getElementById('csvMonth').value;
-            if (year && month) {
-                url += `&year=${year}&month=${month}`;
-            } else if (!year || !month) {
-                alert('Please select both year and month');
-                return;
-            }
+        if (exportType === 'all') {
+            url += '&separated=species';
         }
-        // exportType === 'all' means export all data without filters
         
-        url += '&separated=species';
         window.location.href = url;
         closeCSVModal();
     }
-
-    // Populate years for CSV export
-    function populateCSVYears() {
-        const yearSelect = document.getElementById('csvYear');
-        const yearSelectMonth = document.getElementById('csvYearMonth');
-        const currentYear = new Date().getFullYear();
-        const yearOptions = '<option value="">Select Year</option>';
-        
-        let options = yearOptions;
-        for (let year = currentYear; year >= currentYear - 5; year--) {
-            options += `<option value="${year}">${year}</option>`;
-        }
-        
-        if (yearSelect) yearSelect.innerHTML = options;
-        if (yearSelectMonth) yearSelectMonth.innerHTML = options;
-    }
-
-    // Populate months
-    function populateCSVMonths() {
-        const monthSelect = document.getElementById('csvMonth');
-        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
-                       'July', 'August', 'September', 'October', 'November', 'December'];
-        monthSelect.innerHTML = '<option value="">Select Month</option>';
-        
-        months.forEach((month, index) => {
-            const option = document.createElement('option');
-            option.value = String(index + 1).padStart(2, '0');
-            option.textContent = month;
-            monthSelect.appendChild(option);
-        });
-    }
-
-    // Initialize year/month selects on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        populateCSVYears();
-        populateCSVMonths();
-    });
 </script>
 
 <!-- CSV Export Modal -->
@@ -885,43 +976,9 @@
         </div>
         
         <div class="p-6 space-y-4">
-            <p class="text-sm text-gray-600">Choose export scope:</p>
-            
-            <!-- Export All -->
             <button onclick="exportCSV('all')" class="w-full px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200 font-medium text-sm">
                 📊 Export All Data
             </button>
-            
-            <!-- Export By Year (Annual only) -->
-            <div id="csvByYearSection" style="display: none;">
-                <div class="pt-2 border-t border-gray-200">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Year</label>
-                    <select id="csvYear" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                        <option value="">Select Year</option>
-                    </select>
-                    <button onclick="exportCSV('year')" class="w-full mt-2 px-4 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition border border-amber-200 font-medium text-sm">
-                        📅 Export by Year
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Export By Month (Daily/Monthly only) -->
-            <div id="csvByMonthSection" style="display: none;">
-                <div class="pt-2 border-t border-gray-200">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Year & Month</label>
-                    <div class="space-y-2">
-                        <select id="csvYearMonth" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                            <option value="">Select Year</option>
-                        </select>
-                        <select id="csvMonth" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
-                            <option value="">Select Month</option>
-                        </select>
-                    </div>
-                    <button onclick="exportCSV('month')" class="w-full mt-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition border border-green-200 font-medium text-sm">
-                        📆 Export by Month
-                    </button>
-                </div>
-            </div>
         </div>
         
         <div class="border-t border-gray-200 px-6 py-3 bg-gray-50 rounded-b-lg flex justify-end">

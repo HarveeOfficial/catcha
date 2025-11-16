@@ -53,8 +53,8 @@
                     @endif
                 </div>
             </div>
-            <div class="flex items-center gap-4 pt-2">
-                <a href="{{ route('catches.index') }}" class="text-sm text-indigo-600 hover:underline">&larr; Back</a>
+            {{-- <div class="flex items-center gap-4 pt-2"> --}}
+                {{-- <a href="{{ route('catches.index') }}" class="text-sm text-indigo-600 hover:underline">&larr; Back</a>
                 @php($u = auth()->user())
                 @php($hasFeedback = $catch->feedbacks()->exists())
                 @if ($u && ($u->id === $catch->user_id && !$hasFeedback) && !($u->isAdmin() || $u->isExpert()))
@@ -62,9 +62,9 @@
                         class="text-sm inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700">
                         Edit
                     </a>
-                @endif
+                @endif --}}
 
-                <button type="button" @click="open = !open; if(!ready && !loading){ fetchOrGenerate(false, false); }"
+                {{-- <button type="button" @click="open = !open; if(!ready && !loading){ fetchOrGenerate(false, false); }"
                     class="ml-auto inline-flex items-center px-3 py-1.5 text-xs rounded border border-indigo-600 text-indigo-700 bg-white hover:bg-indigo-50">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" viewBox="0 0 20 20"
                         fill="currentColor">
@@ -245,8 +245,8 @@
                     <div>
                         <x-primary-button>Submit Feedback</x-primary-button>
                     </div>
-                </form>
-                <script>
+                </form> --}}
+                {{-- <script>
                     function aiSuggest() {
                         return {
                             loading: false,
@@ -309,7 +309,7 @@
                     }
                 </script>
             </div>
-        @endif
+        @endif --}}
 
     </div>
     @once

@@ -31,9 +31,9 @@
                             {{ __('Weather Map') }}
                         </x-nav-link>
                    
-                    <x-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
+                    {{-- <x-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
                         {{ __('Guides') }}
-                    </x-nav-link>
+                    </x-nav-link> --}}
 
                     {{-- @unless(auth()->check() && auth()->user()->role === 'fisher')
                         <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
@@ -41,9 +41,11 @@
                         </x-nav-link>
                     @endunless --}}
                     @endunless
+                     @unless(auth()->check() && auth()->user()->role === 'expert')
                     <x-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
                         {{ __('Heatmap') }}
                     </x-nav-link>
+                    @endunless
                     @can('viewLiveTracksAdmin')
                         <x-nav-link :href="route('live-tracks.index')" :active="request()->routeIs('live-tracks.*')">
                             {{ __('Live Track') }}
@@ -123,12 +125,14 @@
             <x-responsive-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.index')">
                 {{ __('Catches') }}
             </x-responsive-nav-link>
+            @unless(auth()->check() && auth()->user()->role === 'expert')
             <x-responsive-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
                 {{ __('Analytics') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
+            @endunless
+            {{-- <x-responsive-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
                 {{ __('Guidance') }}
-            </x-responsive-nav-link>
+            </x-responsive-nav-link> --}}
             {{-- <x-responsive-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
                 {{ __('AI Chat') }}
             </x-responsive-nav-link> --}}
@@ -139,9 +143,11 @@
             <x-responsive-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
                 {{ __('Weather Map') }}
             </x-responsive-nav-link>
+            @unless(auth()->check() && auth()->user()->role === 'expert')
             <x-responsive-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
                 {{ __('Heatmap') }}
             </x-responsive-nav-link>
+            @endunless
             @can('viewLiveTracksAdmin')
                 <x-responsive-nav-link :href="route('live-tracks.index')" :active="request()->routeIs('live-tracks.*')">
                     {{ __('Live Track') }}

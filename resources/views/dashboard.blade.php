@@ -31,7 +31,7 @@
                         <div class="text-xs text-gray-500">Species in catalogue</div>
                     </a>
 
-                    <a href="{{ route('guidances.index') }}" class="block p-4 bg-white shadow rounded border border-gray-200 hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300" aria-labelledby="card-pending-guidances">
+                    {{-- <a href="{{ route('guidances.index') }}" class="block p-4 bg-white shadow rounded border border-gray-200 hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300" aria-labelledby="card-pending-guidances">
                         <h3 id="card-pending-guidances" class="text-sm font-semibold text-gray-600">Pending Guidances</h3>
                         @if($pendingGuidances && $pendingGuidances->isNotEmpty())
                             <ul class="mt-2 space-y-1 text-sm max-h-48 overflow-auto">
@@ -42,7 +42,7 @@
                         @else
                             <div class="text-gray-400 italic mt-2">No pending guidances</div>
                         @endif
-                    </a>
+                    </a> --}}
                 </div>
             @else
                 <div class="grid gap-6 md:grid-cols-3">
@@ -70,7 +70,7 @@
                             @endforeach
                         </ul>
                     </div>
-                    <div class="p-4 bg-white shadow rounded border border-gray-200">
+                    {{-- <div class="p-4 bg-white shadow rounded border border-gray-200">
                         <h3 class="text-sm font-semibold text-gray-600">Active Guidances</h3>
                         <ul class="mt-2 space-y-1 text-sm max-h-48 overflow-auto">
                             @forelse($activeGuidances as $g)
@@ -82,7 +82,7 @@
                                 <li class="text-gray-400 italic">No active guidance</li>
                             @endforelse
                         </ul>
-                    </div>
+                    </div> --}}
                 </div>
             @endif
 
