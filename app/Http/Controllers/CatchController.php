@@ -14,7 +14,7 @@ class CatchController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        if ($user->isExpert() || $user->isAdmin()) {
+        if ($user->isExpert() || $user->isAdmin() || $user->isMao()) {
             $query = FishCatch::with(['species', 'user'])->withCount('feedbacks')->latest('caught_at');
             if ($request->filled('species_id')) {
                 $query->where('species_id', $request->input('species_id'));
@@ -48,6 +48,11 @@ class CatchController extends Controller
 
     public function create()
     {
+        $user = Auth::user();
+        if ($user->isMao() || $user->isAdmin()) {
+            abort(403, 'Admin and Mao users cannot create catches.');
+        }
+
         $species = Species::orderBy('common_name')->get();
         $categories = Species::distinct()->orderBy('category')->pluck('category');
         $gearTypes = GearType::orderBy('name')->get();
@@ -57,6 +62,11 @@ class CatchController extends Controller
 
     public function store(Request $request)
     {
+        $user = Auth::user();
+        if ($user->isMao() || $user->isAdmin()) {
+            abort(403, 'Admin and Mao users cannot create catches.');
+        }
+
         $data = $request->validate([
             'species_id' => 'nullable|exists:species,id',
             'gear_type_id' => 'nullable|exists:gear_types,id',
@@ -96,7 +106,7 @@ class CatchController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->user_id !== $user->id) {
+        if (! ($user->isExpert() || $user->isAdmin() || $user->isMao()) && $fishCatch->user_id !== $user->id) {
             abort(403);
         }
         $fishCatch->loadMissing(['species', 'user', 'feedbacks.expert', 'feedbacks.likes']);
@@ -109,11 +119,11 @@ class CatchController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->user_id !== $user->id) {
+        if (! ($user->isExpert() || $user->isAdmin() || $user->isMao()) && $fishCatch->user_id !== $user->id) {
             abort(403);
         }
         // Once feedback exists, fishers (non expert/admin) can no longer edit
-        if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->feedbacks()->exists()) {
+        if (! ($user->isExpert() || $user->isAdmin() || $user->isMao()) && $fishCatch->feedbacks()->exists()) {
             abort(403);
         }
         $species = Species::orderBy('common_name')->get();
@@ -130,11 +140,11 @@ class CatchController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->user_id !== $user->id) {
+        if (! ($user->isExpert() || $user->isAdmin() || $user->isMao()) && $fishCatch->user_id !== $user->id) {
             abort(403);
         }
         // Once feedback exists, fishers (non expert/admin) can no longer edit
-        if (! ($user->isExpert() || $user->isAdmin()) && $fishCatch->feedbacks()->exists()) {
+        if (! ($user->isExpert() || $user->isAdmin() || $user->isMao()) && $fishCatch->feedbacks()->exists()) {
             abort(403);
         }
         $data = $request->validate([

@@ -16,22 +16,22 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Base users
+        // User::factory()->create([
+        //     'name' => 'Admin',
+        //     'email' => 'admin@catcha.com',
+        //     'role' => 'admin',
+        //     'password' => bcrypt('password'),
+        // ]);
+        // User::factory()->create([
+        //     'name' => 'Fish Landing',
+        //     'email' => 'fishlanding@catcha.com',
+        //     'role' => 'expert',
+        //     'password' => bcrypt('password'),
+        // ]);
         User::factory()->create([
-            'name' => 'Admin',
-            'email' => 'admin@catcha.local',
-            'role' => 'admin',
-            'password' => bcrypt('password'),
-        ]);
-        User::factory()->create([
-            'name' => 'Expert One',
-            'email' => 'expert@catcha.local',
-            'role' => 'expert',
-            'password' => bcrypt('password'),
-        ]);
-        User::factory()->create([
-            'name' => 'Fisher Joe',
-            'email' => 'fisher@catcha.local',
-            'role' => 'fisher',
+            'name' => 'MAO',
+            'email' => 'mao@catcha.com',
+            'role' => 'mao',
             'password' => bcrypt('password'),
         ]);
 

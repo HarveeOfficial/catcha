@@ -14,9 +14,9 @@ class DashboardController extends Controller
         $userId = Auth::id();
         $user = Auth::user();
 
-        // Experts see all recent catches; regular users see only their own
+        // Experts, admins, and mao see all recent catches; regular users see only their own
         $recentCatchesQuery = FishCatch::with(['species']);
-        if ($user && ! $user->isExpert()) {
+        if ($user && ! $user->isExpert() && ! $user->isAdmin() && ! $user->isMao()) {
             $recentCatchesQuery = $recentCatchesQuery->where('user_id', $userId);
         }
         $recentCatches = $recentCatchesQuery->latest('caught_at')->limit(5)->get();
@@ -32,7 +32,7 @@ class DashboardController extends Controller
         };
 
         $monthlyTotals = FishCatch::selectRaw("{$dateExpr} as ym, SUM(quantity) as total_qty");
-        if ($user && ! $user->isExpert()) {
+        if ($user && ! $user->isExpert() && ! $user->isAdmin() && ! $user->isMao()) {
             $monthlyTotals = $monthlyTotals->where('user_id', $userId);
         }
         $monthlyTotals = $monthlyTotals->groupBy('ym')
@@ -45,7 +45,7 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // Admin view toggle: only admins can see admin dashboard
+        // Admin view toggle: only admins and mao can see admin dashboard
         $siteTotals = null;
         $userCount = null;
         $speciesCount = null;
@@ -53,7 +53,7 @@ class DashboardController extends Controller
         $user = Auth::user();
         $showAdmin = false;
         if ($user) {
-            $showAdmin = $user->isAdmin();
+            $showAdmin = $user->isAdmin() || $user->isMao();
         }
 
         if ($showAdmin) {

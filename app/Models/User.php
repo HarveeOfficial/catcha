@@ -4,9 +4,9 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
@@ -21,8 +21,8 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-    'password',
-    'role',
+        'password',
+        'role',
     ];
 
     /**
@@ -56,5 +56,10 @@ class User extends Authenticatable
     public function isExpert(): bool
     {
         return $this->role === 'expert';
+    }
+
+    public function isMao(): bool
+    {
+        return $this->role === 'mao';
     }
 }

@@ -15,46 +15,58 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics')">
-                        {{ __('Catches') }}
-                    </x-nav-link>
-                    @unless(auth()->check() && auth()->user()->role === 'expert')
-                    <x-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
-                        {{ __('Analytics') }}
-                    </x-nav-link>
-                    @endunless
-                     <x-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
-                        {{ __('Seasonal Trends') }}
-                    </x-nav-link>
-                    @unless(auth()->check() && auth()->user()->role === 'admin')
-                        <x-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
-                            {{ __('Weather Map') }}
+                    @if(auth()->check() && auth()->user()->isMao())
+                        <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics')">
+                            {{ __('Catches') }}
                         </x-nav-link>
-                   
-                    {{-- <x-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
-                        {{ __('Guides') }}
-                    </x-nav-link> --}}
+                        <x-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
+                            {{ __('Analytics') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
+                            {{ __('Heatmap') }}
+                        </x-nav-link>
+                    @else
+                        <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics')">
+                            {{ __('Catches') }}
+                        </x-nav-link>
+                        @unless(auth()->check() && auth()->user()->role === 'expert')
+                        <x-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
+                            {{ __('Analytics') }}
+                        </x-nav-link>
+                        @endunless
+                         <x-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
+                            {{ __('Seasonal Trends') }}
+                        </x-nav-link>
+                        @unless(auth()->check() && auth()->user()->role === 'admin')
+                            <x-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
+                                {{ __('Weather Map') }}
+                            </x-nav-link>
+                       
+                        {{-- <x-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
+                            {{ __('Guides') }}
+                        </x-nav-link> --}}
 
-                    {{-- @unless(auth()->check() && auth()->user()->role === 'fisher')
-                        <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
-                            {{ __('AI Chat') }}
+                        {{-- @unless(auth()->check() && auth()->user()->role === 'fisher')
+                            <x-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
+                                {{ __('AI Chat') }}
+                            </x-nav-link>
+                        @endunless --}}
+                        @endunless
+                         @unless(auth()->check() && auth()->user()->role === 'expert')
+                        <x-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
+                            {{ __('Heatmap') }}
                         </x-nav-link>
-                    @endunless --}}
-                    @endunless
-                     @unless(auth()->check() && auth()->user()->role === 'expert')
-                    <x-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
-                        {{ __('Heatmap') }}
-                    </x-nav-link>
-                    @endunless
-                    @can('viewLiveTracksAdmin')
-                        <x-nav-link :href="route('live-tracks.index')" :active="request()->routeIs('live-tracks.*')">
-                            {{ __('Live Track') }}
-                        </x-nav-link>
-                    @endcan
-                    @if(auth()->check() && auth()->user()->isAdmin())
-                        <x-nav-link :href="route('admin.zones.index')" :active="request()->routeIs('admin.zones.*')">
-                            {{ __('Zones') }}
-                        </x-nav-link>
+                        @endunless
+                        @can('viewLiveTracksAdmin')
+                            <x-nav-link :href="route('live-tracks.index')" :active="request()->routeIs('live-tracks.*')">
+                                {{ __('Live Track') }}
+                            </x-nav-link>
+                        @endcan
+                        @if(auth()->check() && auth()->user()->isAdmin())
+                            <x-nav-link :href="route('admin.zones.index')" :active="request()->routeIs('admin.zones.*')">
+                                {{ __('Zones') }}
+                            </x-nav-link>
+                        @endif
                     @endif
                     </div>
             </div>
@@ -122,41 +134,56 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.index')">
-                {{ __('Catches') }}
-            </x-responsive-nav-link>
-            @unless(auth()->check() && auth()->user()->role === 'expert')
-            <x-responsive-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
-                {{ __('Analytics') }}
-            </x-responsive-nav-link>
-            @endunless
-            {{-- <x-responsive-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
-                {{ __('Guidance') }}
-            </x-responsive-nav-link> --}}
-            {{-- <x-responsive-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
-                {{ __('AI Chat') }}
-            </x-responsive-nav-link> --}}
-            
-            <x-responsive-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
-                {{ __('Seasonal Trends') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
-                {{ __('Weather Map') }}
-            </x-responsive-nav-link>
-            @unless(auth()->check() && auth()->user()->role === 'expert')
-            <x-responsive-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
-                {{ __('Heatmap') }}
-            </x-responsive-nav-link>
-            @endunless
-            @can('viewLiveTracksAdmin')
-                <x-responsive-nav-link :href="route('live-tracks.index')" :active="request()->routeIs('live-tracks.*')">
-                    {{ __('Live Track') }}
+            @if(auth()->check() && auth()->user()->isMao())
+                <x-responsive-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.index')">
+                    {{ __('Catches') }}
                 </x-responsive-nav-link>
-            @endcan
-            @if(auth()->check() && auth()->user()->isAdmin())
+                <x-responsive-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
+                    {{ __('Analytics') }}
+                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.zones.index')" :active="request()->routeIs('admin.zones.*')">
                     {{ __('Zones') }}
                 </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
+                    {{ __('Heatmap') }}
+                </x-responsive-nav-link>
+            @else
+                <x-responsive-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.index')">
+                    {{ __('Catches') }}
+                </x-responsive-nav-link>
+                @unless(auth()->check() && auth()->user()->role === 'expert')
+                <x-responsive-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
+                    {{ __('Analytics') }}
+                </x-responsive-nav-link>
+                @endunless
+                {{-- <x-responsive-nav-link :href="route('guidances.index')" :active="request()->routeIs('guidances.*')">
+                    {{ __('Guidance') }}
+                </x-responsive-nav-link> --}}
+                {{-- <x-responsive-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
+                    {{ __('AI Chat') }}
+                </x-responsive-nav-link> --}}
+                
+                <x-responsive-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
+                    {{ __('Seasonal Trends') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
+                    {{ __('Weather Map') }}
+                </x-responsive-nav-link>
+                @unless(auth()->check() && auth()->user()->role === 'expert')
+                <x-responsive-nav-link :href="route('catches.heatmap')" :active="request()->routeIs('catches.heatmap')">
+                    {{ __('Heatmap') }}
+                </x-responsive-nav-link>
+                @endunless
+                @can('viewLiveTracksAdmin')
+                    <x-responsive-nav-link :href="route('live-tracks.index')" :active="request()->routeIs('live-tracks.*')">
+                        {{ __('Live Track') }}
+                    </x-responsive-nav-link>
+                @endcan
+                @if(auth()->check() && auth()->user()->isAdmin())
+                    <x-responsive-nav-link :href="route('admin.zones.index')" :active="request()->routeIs('admin.zones.*')">
+                        {{ __('Zones') }}
+                    </x-responsive-nav-link>
+                @endif
             @endif
         </div>
 

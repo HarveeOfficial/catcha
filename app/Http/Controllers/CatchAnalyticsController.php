@@ -19,11 +19,11 @@ class CatchAnalyticsController extends Controller
             abort(403, 'Experts cannot access analytics.');
         }
 
-        // Scope: fishers see only their own catches; admins see all (optionally filter by user)
+        // Scope: fishers see only their own catches; admins and mao see all (optionally filter by user)
         $base = FishCatch::query();
-        if (! $user->isAdmin()) {
+        if (! $user->isAdmin() && ! $user->isMao()) {
             $base->where('user_id', $user->id);
-        } elseif ($request->filled('user')) {
+        } elseif (($user->isAdmin() || $user->isMao()) && $request->filled('user')) {
             $base->whereHas('user', function ($q) use ($request) {
                 $q->where('name', 'like', '%'.$request->input('user').'%');
             });

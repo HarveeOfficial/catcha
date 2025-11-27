@@ -6,7 +6,7 @@
     <div class="py-8 max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
             <div class="flex flex-col sm:flex-row gap-3 flex-wrap">
-                @if (auth()->user()->isExpert() || auth()->user()->isAdmin())
+                @if (auth()->user()->isExpert() || auth()->user()->isAdmin() || auth()->user()->isMao())
                     <form method="get" class="flex items-center gap-2 flex-wrap">
                         <!-- Species Filter -->
                         <select name="species_id" class="rounded-md border-gray-300 text-sm">
@@ -45,8 +45,10 @@
                 @endif
             </div>
             <div class="flex justify-end">
-                <a href="{{ route('catches.create') }}"
-                    class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ __('Record Catch') }}</a>
+                @if (!auth()->user()->isMao() && !auth()->user()->isAdmin())
+                    <a href="{{ route('catches.create') }}"
+                        class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">{{ __('Record Catch') }}</a>
+                @endif
             </div>
         </div>
         <div class="bg-white overflow-hidden shadow-sm rounded-md">
