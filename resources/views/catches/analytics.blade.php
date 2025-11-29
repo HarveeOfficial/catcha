@@ -41,7 +41,7 @@
         </div>
         
         <!-- Insights Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
             <!-- Top Species -->
             <div class="bg-blue-50 rounded-lg p-4 border border-blue-300">
                 <p class="text-blue-800 text-xs font-semibold uppercase tracking-wide mb-3">Top Species</p>
@@ -72,6 +72,20 @@
                 <p class="text-orange-800 text-xs font-semibold uppercase tracking-wide mb-3">Avg per Catch</p>
                 <p class="text-gray-900 font-semibold text-3xl">{{ $totalSummary->catches > 0 ? number_format($totalSummary->total_qty / $totalSummary->catches, 2) : 0 }}</p>
                 <p class="text-orange-700 text-xs mt-1">kg per catch</p>
+            </div>
+
+            <!-- Bycatch Total -->
+            <div class="bg-amber-50 rounded-lg p-4 border border-amber-300">
+                <p class="text-amber-800 text-xs font-semibold uppercase tracking-wide mb-3">Bycatch Total</p>
+                <p class="text-gray-900 font-semibold text-3xl">{{ number_format($bycatchSummary['total_qty'] ?? 0, 2) }}</p>
+                <p class="text-amber-700 text-xs mt-1">kg recorded</p>
+            </div>
+
+            <!-- Discard Total -->
+            <div class="bg-red-50 rounded-lg p-4 border border-red-300">
+                <p class="text-red-800 text-xs font-semibold uppercase tracking-wide mb-3">Discard Total</p>
+                <p class="text-gray-900 font-semibold text-3xl">{{ number_format($discardSummary['total_qty'] ?? 0, 2) }}</p>
+                <p class="text-red-700 text-xs mt-1">kg recorded</p>
             </div>
         </div>
     </div>

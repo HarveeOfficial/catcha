@@ -509,6 +509,63 @@ class CatchAnalyticsController extends Controller
             return response()->stream($callback, 200, $headers);
         }
 
+        // Bycatch Summary
+        $bycatchSummary = [
+            'total_qty' => (clone $base)->whereNotNull('bycatch_quantity')->sum('bycatch_quantity'),
+            'catch_count' => (clone $base)->where('bycatch_quantity', '>', 0)->count(),
+            'species_count' => (clone $base)->where('bycatch_quantity', '>', 0)->whereNotNull('bycatch_species_ids')->distinct('bycatch_species_ids')->count(),
+        ];
+
+        $bycatchSpecies = (clone $base)
+            ->whereNotNull('bycatch_species_ids')
+            ->where('bycatch_quantity', '>', 0)
+            ->selectRaw('bycatch_species_ids, COUNT(*) as records, COALESCE(SUM(bycatch_quantity), 0) as total_qty')
+            ->groupBy('bycatch_species_ids')
+            ->orderByDesc('total_qty')
+            ->get()
+            ->map(function ($item) {
+                // Parse JSON species IDs and get first species for display
+                $speciesIds = is_array($item->bycatch_species_ids) ? $item->bycatch_species_ids : json_decode($item->bycatch_species_ids, true);
+                if (! empty($speciesIds) && is_array($speciesIds)) {
+                    $species = Species::find($speciesIds[0]);
+                    $item->species = $species;
+                }
+
+                return $item;
+            });
+
+        // Discard Summary
+        $discardSummary = [
+            'total_qty' => (clone $base)->whereNotNull('discard_quantity')->sum('discard_quantity'),
+            'catch_count' => (clone $base)->where('discard_quantity', '>', 0)->count(),
+            'species_count' => (clone $base)->where('discard_quantity', '>', 0)->whereNotNull('discard_species_ids')->distinct('discard_species_ids')->count(),
+        ];
+
+        $discardSpecies = (clone $base)
+            ->whereNotNull('discard_species_ids')
+            ->where('discard_quantity', '>', 0)
+            ->selectRaw('discard_species_ids, COUNT(*) as records, COALESCE(SUM(discard_quantity), 0) as total_qty')
+            ->groupBy('discard_species_ids')
+            ->orderByDesc('total_qty')
+            ->get()
+            ->map(function ($item) {
+                // Parse JSON species IDs and get first species for display
+                $speciesIds = is_array($item->discard_species_ids) ? $item->discard_species_ids : json_decode($item->discard_species_ids, true);
+                if (! empty($speciesIds) && is_array($speciesIds)) {
+                    $species = Species::find($speciesIds[0]);
+                    $item->species = $species;
+                }
+
+                return $item;
+            });
+
+        $discardReasons = (clone $base)
+            ->whereNotNull('discard_reason')
+            ->where('discard_quantity', '>', 0)
+            ->selectRaw('discard_reason as reason, COUNT(*) as count')
+            ->groupBy('discard_reason')
+            ->get();
+
         return view('catches.analytics', [
             'totalSummary' => $totalSummary,
             'topSpecies' => $topSpecies,
@@ -522,6 +579,11 @@ class CatchAnalyticsController extends Controller
             'gearSpecies' => $gearSpecies,
             'zoneBreakdown' => $zoneBreakdown,
             'speciesList' => $speciesList,
+            'bycatchSummary' => $bycatchSummary,
+            'bycatchSpecies' => $bycatchSpecies,
+            'discardSummary' => $discardSummary,
+            'discardSpecies' => $discardSpecies,
+            'discardReasons' => $discardReasons,
         ]);
     }
 }

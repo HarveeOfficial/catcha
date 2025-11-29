@@ -80,11 +80,25 @@ class CatchController extends Controller
             'quantity' => 'nullable|numeric|min:0',
             'count' => 'nullable|integer|min:0',
             'avg_size_cm' => 'nullable|numeric|min:0',
+            'bycatch_quantity' => 'nullable|numeric|min:0',
+            'bycatch_species_ids' => 'nullable|array',
+            'bycatch_species_ids.*' => 'exists:species,id',
+            'discard_quantity' => 'nullable|numeric|min:0',
+            'discard_species_ids' => 'nullable|array',
+            'discard_species_ids.*' => 'exists:species,id',
+            'discard_reason' => 'nullable|string|in:too_small,damaged,dead,species_not_allowed,over_quota,other',
+            'discard_reason_other' => 'nullable|string|max:255',
+            'weather' => 'nullable|string|in:sunny,rainy,cloudy,windy,stormy,foggy',
             'vessel_name' => 'nullable|string|max:150',
             'environmental_data' => 'nullable|array',
             'notes' => 'nullable|array',
         ]);
         $data['user_id'] = Auth::id();
+
+        // Store weather in environmental_data
+        if ($request->filled('weather')) {
+            $data['environmental_data'] = array_merge($data['environmental_data'] ?? [], ['weather' => $request->input('weather')]);
+        }
 
         if (empty($data['geohash']) && isset($data['latitude'], $data['longitude'])) {
             $data['geohash'] = $this->encodeGeohash((float) $data['latitude'], (float) $data['longitude']);
@@ -109,21 +123,25 @@ class CatchController extends Controller
         if (! ($user->isExpert() || $user->isAdmin() || $user->isMao()) && $fishCatch->user_id !== $user->id) {
             abort(403);
         }
-        $fishCatch->loadMissing(['species', 'user', 'feedbacks.expert', 'feedbacks.likes']);
-        $feedbacks = $fishCatch->feedbacks()->with('likes')->withCount('likes')->latest()->get();
+        $fishCatch->loadMissing(['species', 'user']);
 
-        return view('catches.show', ['catch' => $fishCatch, 'feedbacks' => $feedbacks]);
+        return view('catches.show', ['catch' => $fishCatch]);
     }
 
     public function edit(FishCatch $fishCatch)
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        if (! ($user->isExpert() || $user->isAdmin() || $user->isMao()) && $fishCatch->user_id !== $user->id) {
+        // Everyone can only edit their own catches
+        if ($fishCatch->user_id !== $user->id) {
             abort(403);
         }
-        // Once feedback exists, fishers (non expert/admin) can no longer edit
-        if (! ($user->isExpert() || $user->isAdmin() || $user->isMao()) && $fishCatch->feedbacks()->exists()) {
+        // Experts cannot edit if feedback exists
+        if ($user->isExpert() && $fishCatch->feedbacks()->exists()) {
+            abort(403);
+        }
+        // Regular fishers cannot edit if feedback exists
+        if (! ($user->isAdmin() || $user->isMao() || $user->isExpert()) && $fishCatch->feedbacks()->exists()) {
             abort(403);
         }
         $species = Species::orderBy('common_name')->get();
@@ -140,11 +158,16 @@ class CatchController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        if (! ($user->isExpert() || $user->isAdmin() || $user->isMao()) && $fishCatch->user_id !== $user->id) {
+        // Everyone can only edit their own catches
+        if ($fishCatch->user_id !== $user->id) {
             abort(403);
         }
-        // Once feedback exists, fishers (non expert/admin) can no longer edit
-        if (! ($user->isExpert() || $user->isAdmin() || $user->isMao()) && $fishCatch->feedbacks()->exists()) {
+        // Experts cannot edit if feedback exists
+        if ($user->isExpert() && $fishCatch->feedbacks()->exists()) {
+            abort(403);
+        }
+        // Regular fishers cannot edit if feedback exists
+        if (! ($user->isAdmin() || $user->isMao() || $user->isExpert()) && $fishCatch->feedbacks()->exists()) {
             abort(403);
         }
         $data = $request->validate([
@@ -159,11 +182,26 @@ class CatchController extends Controller
             'quantity' => 'nullable|numeric|min:0',
             'count' => 'nullable|integer|min:0',
             'avg_size_cm' => 'nullable|numeric|min:0',
+            'bycatch_quantity' => 'nullable|numeric|min:0',
+            'bycatch_species_ids' => 'nullable|array',
+            'bycatch_species_ids.*' => 'exists:species,id',
+            'discard_quantity' => 'nullable|numeric|min:0',
+            'discard_species_ids' => 'nullable|array',
+            'discard_species_ids.*' => 'exists:species,id',
+            'discard_reason' => 'nullable|string|in:too_small,damaged,dead,species_not_allowed,over_quota,other',
+            'discard_reason_other' => 'nullable|string|max:255',
+            'weather' => 'nullable|string|in:sunny,rainy,cloudy,windy,stormy,foggy',
             'gear_type' => 'nullable|string|max:100',
             'vessel_name' => 'nullable|string|max:150',
             'environmental_data' => 'nullable|array',
             'notes' => 'nullable|array',
         ]);
+
+        // Store weather in environmental_data
+        if ($request->filled('weather')) {
+            $currentEnvData = $fishCatch->environmental_data ?? [];
+            $data['environmental_data'] = array_merge($currentEnvData, ['weather' => $request->input('weather')]);
+        }
 
         // If lat/lon provided and geohash missing, recompute
         if ((isset($data['latitude']) && isset($data['longitude'])) && empty($data['geohash'])) {
