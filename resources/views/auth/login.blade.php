@@ -1,4 +1,9 @@
 <x-guest-layout>
+    <!-- Logo -->
+    <div class="flex justify-center mb-8">
+        <img src="{{ asset('logo/catcha_logo.png') }}" alt="Catcha Logo" class="h-32">
+    </div>
+
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 

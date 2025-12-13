@@ -10,7 +10,7 @@
         <h2 class="text-2xl font-bold text-gray-900 mb-6">Catch Analytics Report</h2>
         
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <!-- Total Catches -->
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-5 border border-blue-200 hover:shadow-md transition">
                 <p class="text-blue-700 text-xs font-semibold uppercase tracking-wide mb-2">Total Catches</p>
@@ -90,244 +90,259 @@
         </div>
     </div>
 
-    <!-- Charts Section -->
-    <div class="grid md:grid-cols-3 gap-6">
-        <!-- Species Breakdown Pie Chart -->
-        <div class="p-4 bg-white rounded border shadow">
-            <h2 class="font-semibold text-gray-700 text-sm mb-4">Species Breakdown</h2>
-            <canvas id="speciesChart" style="max-height: 300px;"></canvas>
-        </div>
-
-        <!-- Gear Breakdown Pie Chart -->
-        <div class="p-4 bg-white rounded border shadow">
-            <h2 class="font-semibold text-gray-700 text-sm mb-4">Gear Breakdown</h2>
-            <canvas id="gearChart" style="max-height: 300px;"></canvas>
-        </div>
-
-        <!-- Zone Breakdown Pie Chart -->
-        <div class="p-4 bg-white rounded border shadow">
-            <h2 class="font-semibold text-gray-700 text-sm mb-4">Zone Breakdown</h2>
-            @if($zoneBreakdown && $zoneBreakdown->count() > 0)
-                <canvas id="zoneChart" style="max-height: 300px;"></canvas>
-            @else
-                <div class="flex items-center justify-center h-64 text-gray-400">
-                    <p>No zone data available</p>
-                </div>
-            @endif
-        </div>
-    </div>
-
-    <!-- Map Section - Full Width -->
-   <div style="display: flex; justify-content: center;">
-  <div class="bg-white rounded border shadow overflow-hidden"
-       style="width: 1000px; max-width: 100%; margin: 0 auto;">
-    <div id="analyticsMap" style="width: 100%; height: 500px; min-height: 500px;"></div>
-    <!-- Zone Legend -->
-    <div class="p-4 border-t border-gray-200">
-      <h3 class="text-sm font-semibold text-gray-700 mb-3">Zones</h3>
-      <div id="zoneLegend" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
-        <!-- Legend items will be populated here -->
-      </div>
-    </div>
-  </div>
-</div>
-
-
-    <div class="grid md:grid-cols-2 gap-6">
-        <div class="p-4 bg-white rounded border shadow">
-            <h2 class="font-semibold text-gray-700 text-sm mb-2">Top Species (by qty)</h2>
-            <ul class="space-y-1 text-sm">
-                @forelse($topSpecies as $row)
-                    <li class="flex justify-between"><span>{{ $row->species?->common_name ?? 'Unknown' }}</span> <span class="text-gray-500">{{ number_format($row->qty_sum,2) }} kg</span></li>
-                @empty
-                    <li class="text-gray-400 italic">No data</li>
-                @endforelse
-            </ul>
-        </div>
-        <div class="p-4 bg-white rounded border shadow">
-            <div class="flex items-center justify-between">
-                <h2 class="font-semibold text-gray-700 text-sm mb-2">Gear Breakdown</h2>
-                <button onclick="openCsvExportModal('gear')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
+    <!-- Tabs Navigation -->
+    <div class="bg-white rounded-lg shadow-md">
+        <div class="border-b border-gray-200">
+            <div class="flex space-x-0">
+                <button onclick="switchTab('charts')" 
+                        id="chartsTab"
+                        class="flex-1 px-6 py-3 text-center font-medium text-gray-700 border-b-2 border-blue-500 bg-blue-50 hover:text-gray-900 transition">
+                    📊 Charts
+                </button>
+                <button onclick="switchTab('map')" 
+                        id="mapTab"
+                        class="flex-1 px-6 py-3 text-center font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-900 hover:border-gray-300 transition">
+                    🗺️ Zones and Catches
+                </button>
+                <button onclick="switchTab('tables')" 
+                        id="tablesTab"
+                        class="flex-1 px-6 py-3 text-center font-medium text-gray-600 border-b-2 border-transparent hover:text-gray-900 hover:border-gray-300 transition">
+                    📋 Reports
+                </button>
             </div>
-            <div class="table-container">
-                <table class="w-full text-xs">
-                    <thead><tr class="text-left text-gray-500"><th class="py-1">Gear Type</th><th class="py-1">Qty (kg)</th><th class="py-1">Catches</th></tr></thead>
-                    <tbody>
-                    @forelse($gearBreakdown as $g)
-                        <tr class="border-t cursor-pointer hover:bg-gray-50 gear-row" data-gear="{{ $loop->index }}">
-                            <td class="py-1 font-medium">{{ $g->gear_type }}</td>
-                            <td class="py-1">{{ number_format($g->qty,2) }}</td>
-                            <td class="py-1">{{ $g->catches }}</td>
-                        </tr>
-                        @php
-                            $rows = $gearSpecies[$g->gear_type] ?? collect();
-                            $top = $rows->sortByDesc('qty')->take(5);
-                        @endphp
-                        @if($top->isNotEmpty())
-                            <tr class="gear-details hidden bg-gray-50" data-gear="{{ $loop->index }}">
-                                <td colspan="3" class="py-2 pl-4">
-                                    <div class="text-xs text-gray-600 space-y-1">
-                                        <div class="font-medium text-gray-700 mb-1">Top species:</div>
-                                        @foreach($top as $r)
-                                            <div>• {{ $r->species?->common_name ?? $r->species_id }}: {{ number_format($r->qty,2) }} kg</div>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="p-6">
+            <!-- Charts Tab -->
+            <div id="chartsContent" class="tab-content">
+                <div class="grid md:grid-cols-3 gap-6">
+                    <!-- Species Breakdown Pie Chart -->
+                    <div class="p-4 bg-white rounded border shadow">
+                        <h2 class="font-semibold text-gray-700 text-sm mb-4">Species Breakdown</h2>
+                        <canvas id="speciesChart" style="max-height: 300px;"></canvas>
+                    </div>
+
+                    <!-- Gear Breakdown Pie Chart -->
+                    <div class="p-4 bg-white rounded border shadow">
+                        <h2 class="font-semibold text-gray-700 text-sm mb-4">Gear Breakdown</h2>
+                        <canvas id="gearChart" style="max-height: 300px;"></canvas>
+                    </div>
+
+                    <!-- Zone Breakdown Pie Chart -->
+                    <div class="p-4 bg-white rounded border shadow">
+                        <h2 class="font-semibold text-gray-700 text-sm mb-4">Zone Breakdown</h2>
+                        @if($zoneBreakdown && $zoneBreakdown->count() > 0)
+                            <canvas id="zoneChart" style="max-height: 300px;"></canvas>
+                        @else
+                            <div class="flex items-center justify-center h-64 text-gray-400">
+                                <p>No zone data available</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Tab -->
+            <div id="mapContent" class="tab-content hidden">
+                <div style="display: flex; justify-content: center;">
+                    <div class="bg-white rounded border shadow overflow-hidden"
+                         style="width: 1000px; max-width: 100%; margin: 0 auto;">
+                        <div id="analyticsMap" style="width: 100%; height: 500px; min-height: 500px;"></div>
+                        <!-- Zone Legend -->
+                        <div class="p-4 border-t border-gray-200">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-3">Zones</h3>
+                            <div id="zoneLegend" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 text-sm">
+                                <!-- Legend items will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tables Tab -->
+            <div id="tablesContent" class="tab-content hidden space-y-6">
+                <div class="p-4 bg-white rounded border shadow">
+                    <h2 class="font-semibold text-gray-700 text-sm mb-2">Top Species (by qty)</h2>
+                    <ul class="space-y-1 text-sm">
+                        @forelse($topSpecies as $row)
+                            <li class="flex justify-between"><span>{{ $row->species?->common_name ?? 'Unknown' }}</span> <span class="text-gray-500">{{ number_format($row->qty_sum,2) }} kg</span></li>
+                        @empty
+                            <li class="text-gray-400 italic">No data</li>
+                        @endforelse
+                    </ul>
+                </div>
+                <div class="p-4 bg-white rounded border shadow">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-semibold text-gray-700 text-sm mb-2">Gear Breakdown</h2>
+                        <button onclick="openCsvExportModal('gear')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="w-full text-xs">
+                            <thead><tr class="text-left text-gray-500"><th class="py-1">Gear Type</th><th class="py-1">Qty (kg)</th><th class="py-1">Catches</th></tr></thead>
+                            <tbody>
+                            @forelse($gearBreakdown as $g)
+                                <tr class="border-t cursor-pointer hover:bg-gray-50 gear-row" data-gear="{{ $loop->index }}">
+                                    <td class="py-1 font-medium">{{ $g->gear_type }}</td>
+                                    <td class="py-1">{{ number_format($g->qty,2) }}</td>
+                                    <td class="py-1">{{ $g->catches }}</td>
+                                </tr>
+                                @php
+                                    $rows = $gearSpecies[$g->gear_type] ?? collect();
+                                    $top = $rows->sortByDesc('qty')->take(5);
+                                @endphp
+                                @if($top->isNotEmpty())
+                                    <tr class="gear-details hidden bg-gray-50" data-gear="{{ $loop->index }}">
+                                        <td colspan="3" class="py-2 pl-4">
+                                            <div class="text-xs text-gray-600 space-y-1">
+                                                <div class="font-medium text-gray-700 mb-1">Top species:</div>
+                                                @foreach($top as $r)
+                                                    <div>• {{ $r->species?->common_name ?? $r->species_id }}: {{ number_format($r->qty,2) }} kg</div>
+                                                @endforeach
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
+                            @empty
+                                <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Zone Breakdown Table -->
+                <div class="p-4 bg-white rounded border shadow">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-semibold text-gray-700 text-sm mb-2">Zone Breakdown</h2>
+                        <button onclick="openCsvExportModal('zone')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="w-full text-xs">
+                            <thead><tr class="text-left text-gray-500"><th class="py-1">Zone</th><th class="py-1">Qty (kg)</th><th class="py-1">Catches</th></tr></thead>
+                            <tbody>
+                            @forelse($zoneBreakdown as $z)
+                                <tr class="border-t hover:bg-gray-50">
+                                    <td class="py-1 font-medium">{{ $z->zone?->name ?? 'Unknown' }}</td>
+                                    <td class="py-1">{{ number_format($z->qty, 2) }}</td>
+                                    <td class="py-1">{{ $z->catches }}</td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Daily and Monthly Tables -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="p-4 bg-white rounded border shadow">
+                        <div class="flex items-center justify-between">
+                            <h2 class="font-semibold text-gray-700 text-sm mb-2">Daily (Today)</h2>
+                        </div>
+                        <div class="table-container">
+                            <table class="w-full text-xs">
+                                <thead><tr class="text-left text-gray-500"><th class="py-1">Date</th><th class="py-1">Qty (kg)</th><th class="py-1">Count</th></tr></thead>
+                                <tbody>
+                                @forelse($dailySeries->sortByDesc('d') as $d)
+                                    <tr class="border-t"><td class="py-1">{{ $d->d }}</td><td class="py-1">{{ number_format($d->qty,2) }}</td><td class="py-1">{{ $d->catch_count }}</td></tr>
+                                @empty
+                                    <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
+                                @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        @if(!empty($dailyBySpecies) && $dailyBySpecies->isNotEmpty())
+                            <div class="mt-4 text-xs">
+                                <div class="text-gray-600 font-medium mb-2">Daily by species</div>
+                                <div class="table-container">
+                                    <table class="w-full text-xs">
+                                        <thead><tr class="text-left text-gray-500"><th class="py-1">Date</th><th class="py-1">Species</th><th class="py-1">Qty</th><th class="py-1">Count</th></tr></thead>
+                                        <tbody>
+                                        @foreach($dailyBySpecies->sortByDesc(fn($group) => $group->first()->d) as $date => $rows)
+                                            @foreach($rows as $r)
+                                                <tr class="border-t"><td class="py-1">{{ $date }}</td><td class="py-1">{{ $r->species?->common_name ?? $r->species_id }}</td><td class="py-1">{{ number_format($r->qty,2) }}</td><td class="py-1">{{ $r->catch_count }}</td></tr>
+                                            @endforeach
                                         @endforeach
-                                    </div>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="p-4 bg-white rounded border shadow">
+                        <div class="flex items-center justify-between">
+                            <h2 class="font-semibold text-gray-700 text-sm mb-2">Monthly (last 6)</h2>
+                            <button onclick="openCsvExportModal('monthly')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="w-full text-xs">
+                                <thead><tr class="text-left text-gray-500"><th class="py-1">Month</th><th class="py-1">Qty (kg)</th><th class="py-1">Count</th><th class="py-1">Species breakdown</th></tr></thead>
+                                <tbody>
+                                @forelse($monthlySeries as $m)
+                                    <tr class="border-t">
+                                        <td class="py-1">{{ $m->ym }}</td>
+                                        <td class="py-1">{{ number_format($m->qty,2) }}</td>
+                                        <td class="py-1">{{ $m->catch_count }}</td>
+                                        <td class="py-1 text-xs text-gray-600">
+                                            @php
+                                                $rows = $monthlyBySpecies[$m->ym] ?? collect();
+                                                $top = $rows->sortByDesc('qty')->take(3);
+                                            @endphp
+                                            @if($top->isEmpty())
+                                                <span class="text-gray-400">—</span>
+                                            @else
+                                                @foreach($top as $r)
+                                                    <div>{{ $r->species?->common_name ?? $r->species_id }}: {{ number_format($r->qty,2) }} kg</div>
+                                                @endforeach
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="4" class="text-gray-400 italic py-2">No data</td></tr>
+                                @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Annual Table -->
+                <div class="p-4 bg-white rounded border shadow">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-semibold text-gray-700 text-sm mb-2">Annual</h2>
+                        <button onclick="openCsvExportModal('annual')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
+                    </div>
+                    <table class="w-full text-xs">
+                        <thead><tr class="text-left text-gray-500"><th class="py-1">Year</th><th class="py-1">Qty (kg)</th><th class="py-1">Count</th></tr></thead>
+                        <tbody>
+                        @forelse($annualSeries as $y)
+                            <tr class="border-t">
+                                <td class="py-1">{{ $y->y }}</td>
+                                <td class="py-1">{{ number_format($y->qty,2) }}</td>
+                                <td class="py-1">{{ $y->catch_count }}</td>
+                                <td class="py-1 text-xs text-gray-600">
+                                    @php
+                                        $rows = $annualBySpecies[$y->y] ?? collect();
+                                        $top = $rows->sortByDesc('qty')->take(3);
+                                    @endphp
+                                    @if($top->isEmpty())
+                                        <span class="text-gray-400">—</span>
+                                    @else
+                                        @foreach($top as $r)
+                                            <div>{{ $r->species?->common_name ?? $r->species_id }}: {{ number_format($r->qty,2) }} kg</div>
+                                        @endforeach
+                                    @endif
                                 </td>
                             </tr>
-                        @endif
-                    @empty
-                        <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Zone Breakdown Table -->
-        <div class="p-4 bg-white rounded border shadow">
-            <div class="flex items-center justify-between">
-                <h2 class="font-semibold text-gray-700 text-sm mb-2">Zone Breakdown</h2>
-                <button onclick="openCsvExportModal('zone')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
-            </div>
-            <div class="table-container">
-                <table class="w-full text-xs">
-                    <thead><tr class="text-left text-gray-500"><th class="py-1">Zone</th><th class="py-1">Qty (kg)</th><th class="py-1">Catches</th></tr></thead>
-                    <tbody>
-                    @forelse($zoneBreakdown as $z)
-                        <tr class="border-t hover:bg-gray-50">
-                            <td class="py-1 font-medium">{{ $z->zone?->name ?? 'Unknown' }}</td>
-                            <td class="py-1">{{ number_format($z->qty, 2) }}</td>
-                            <td class="py-1">{{ $z->catches }}</td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <div class="grid md:grid-cols-2 gap-6">
-        <div class="p-4 bg-white rounded border shadow">
-            <div class="flex items-center justify-between">
-                <h2 class="font-semibold text-gray-700 text-sm mb-2">Daily (Today)</h2>
-                {{-- <button onclick="openCsvExportModal('daily')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button> --}}
-            </div>
-            <div class="table-container">
-                <table class="w-full text-xs">
-                    <thead><tr class="text-left text-gray-500"><th class="py-1">Date</th><th class="py-1">Qty (kg)</th><th class="py-1">Count</th></tr></thead>
-                    <tbody>
-                    @forelse($dailySeries->sortByDesc('d') as $d)
-                        <tr class="border-t"><td class="py-1">{{ $d->d }}</td><td class="py-1">{{ number_format($d->qty,2) }}</td><td class="py-1">{{ $d->catch_count }}</td></tr>
-                    @empty
-                        <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if(!empty($dailyBySpecies) && $dailyBySpecies->isNotEmpty())
-                <div class="mt-4 text-xs">
-                    <div class="text-gray-600 font-medium mb-2">Daily by species</div>
-                    <div class="table-container">
-                        <table class="w-full text-xs">
-                            <thead><tr class="text-left text-gray-500"><th class="py-1">Date</th><th class="py-1">Species</th><th class="py-1">Qty</th><th class="py-1">Count</th></tr></thead>
-                            <tbody>
-                            @foreach($dailyBySpecies->sortByDesc(fn($group) => $group->first()->d) as $date => $rows)
-                                @foreach($rows as $r)
-                                    <tr class="border-t"><td class="py-1">{{ $date }}</td><td class="py-1">{{ $r->species?->common_name ?? $r->species_id }}</td><td class="py-1">{{ number_format($r->qty,2) }}</td><td class="py-1">{{ $r->catch_count }}</td></tr>
-                                @endforeach
-                            @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                        @empty
+                            <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table>
                 </div>
-            @endif
-        </div>
-        <div class="p-4 bg-white rounded border shadow">
-            <div class="flex items-center justify-between">
-                <h2 class="font-semibold text-gray-700 text-sm mb-2">Monthly (last 6)</h2>
-                <button onclick="openCsvExportModal('monthly')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
             </div>
-            <div class="table-container">
-                <table class="w-full text-xs">
-                    <thead><tr class="text-left text-gray-500"><th class="py-1">Month</th><th class="py-1">Qty (kg)</th><th class="py-1">Count</th><th class="py-1">Species breakdown</th></tr></thead>
-                    <tbody>
-                    @forelse($monthlySeries as $m)
-                        <tr class="border-t">
-                            <td class="py-1">{{ $m->ym }}</td>
-                            <td class="py-1">{{ number_format($m->qty,2) }}</td>
-                            <td class="py-1">{{ $m->catch_count }}</td>
-                            <td class="py-1 text-xs text-gray-600">
-                                @php
-                                    $rows = $monthlyBySpecies[$m->ym] ?? collect();
-                                    $top = $rows->sortByDesc('qty')->take(3);
-                                @endphp
-                                @if($top->isEmpty())
-                                    <span class="text-gray-400">—</span>
-                                @else
-                                    @foreach($top as $r)
-                                        <div>{{ $r->species?->common_name ?? $r->species_id }}: {{ number_format($r->qty,2) }} kg</div>
-                                    @endforeach
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="4" class="text-gray-400 italic py-2">No data</td></tr>
-                    @endforelse
-                    </tbody>
-                </table>
-            </div>
-            {{-- @if(!empty($monthlyBySpecies) && $monthlyBySpecies->isNotEmpty())
-                <div class="mt-4 text-xs">
-                    <div class="text-gray-600 font-medium mb-2">Monthly by species</div>
-                    <div class="table-container">
-                        <table class="w-full text-xs">
-                            <thead><tr class="text-left text-gray-500"><th class="py-1">Period</th><th class="py-1">Species</th><th class="py-1">Qty</th><th class="py-1">Count</th></tr></thead>
-                            <tbody>
-                            @foreach($monthlyBySpecies as $period => $rows)
-                                @foreach($rows as $r)
-                                    <tr class="border-t"><td class="py-1">{{ $period }}</td><td class="py-1">{{ $r->species?->common_name ?? $r->species_id }}</td><td class="py-1">{{ number_format($r->qty,2) }}</td><td class="py-1">{{ $r->catch_count }}</td></tr>
-                                @endforeach
-                            @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            @endif --}}
-        </div>
-    </div>
-    <div class="p-4 bg-white rounded border shadow">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-gray-700 text-sm mb-2">Annual</h2>
-            <button onclick="openCsvExportModal('annual')" class="text-xs text-sky-600 hover:text-sky-700">Download CSV</button>
-        </div>
-        <table class="w-full text-xs">
-            <thead><tr class="text-left text-gray-500"><th class="py-1">Year</th><th class="py-1">Qty (kg)</th><th class="py-1">Count</th></tr></thead>
-            <tbody>
-            @forelse($annualSeries as $y)
-                <tr class="border-t">
-                    <td class="py-1">{{ $y->y }}</td>
-                    <td class="py-1">{{ number_format($y->qty,2) }}</td>
-                    <td class="py-1">{{ $y->catch_count }}</td>
-                    <td class="py-1 text-xs text-gray-600">
-                        @php
-                            $rows = $annualBySpecies[$y->y] ?? collect();
-                            $top = $rows->sortByDesc('qty')->take(3);
-                        @endphp
-                        @if($top->isEmpty())
-                            <span class="text-gray-400">—</span>
-                        @else
-                            @foreach($top as $r)
-                                <div>{{ $r->species?->common_name ?? $r->species_id }}: {{ number_format($r->qty,2) }} kg</div>
-                            @endforeach
-                        @endif
-                    </td>
-                </tr>
-            @empty
-                <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
-            @endforelse
-            </tbody>
-        </table>
     </div>
 </div>
 
@@ -337,6 +352,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 <style>
+    .tab-content {
+        display: block;
+    }
+
+    .tab-content.hidden {
+        display: none;
+    }
     #analyticsMap {
         position: relative;
         z-index: 1;
@@ -461,6 +483,40 @@
 <script>
     let zoneLayers = [];
     let map;
+    let chartsInitialized = false;
+
+    // Tab switching function
+    function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+
+        // Deactivate all tabs
+        document.querySelectorAll('[id$="Tab"]').forEach(tab => {
+            tab.classList.remove('border-blue-500', 'bg-blue-50');
+            tab.classList.add('border-transparent', 'text-gray-600');
+        });
+
+        // Show selected tab content
+        const contentId = tabName + 'Content';
+        document.getElementById(contentId).classList.remove('hidden');
+
+        // Activate selected tab
+        const tabId = tabName + 'Tab';
+        document.getElementById(tabId).classList.remove('border-transparent', 'text-gray-600');
+        document.getElementById(tabId).classList.add('border-blue-500', 'bg-blue-50', 'text-gray-700');
+
+        // Initialize map if switching to map tab
+        if (tabName === 'map' && !map) {
+            setTimeout(initAnalyticsMap, 100);
+        }
+
+        // Initialize charts if switching to charts tab and not already initialized
+        if (tabName === 'charts' && !chartsInitialized) {
+            setTimeout(initializeCharts, 100);
+        }
+    }
 
     function initAnalyticsMap() {
         if (typeof L === 'undefined') {
@@ -645,24 +701,6 @@
         }
     }
 
-    // Initialize map when DOM is ready
-    document.addEventListener('DOMContentLoaded', initAnalyticsMap);
-
-    // Gear breakdown toggle functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.gear-row').forEach(row => {
-            row.addEventListener('click', function(e) {
-                e.preventDefault();
-                const gearIndex = this.dataset.gear;
-                const details = document.querySelector(`.gear-details[data-gear="${gearIndex}"]`);
-
-                if (details) {
-                    details.classList.toggle('hidden');
-                }
-            });
-        });
-    });
-
     // Detect and handle overlapping zones
     function detectOverlaps() {
         const overlaps = [];
@@ -835,7 +873,22 @@
 
     // Initialize charts on page load
     document.addEventListener('DOMContentLoaded', function() {
+        // Automatically initialize charts for the first tab
+        chartsInitialized = true;
         initializeCharts();
+
+        // Gear breakdown toggle functionality
+        document.querySelectorAll('.gear-row').forEach(row => {
+            row.addEventListener('click', function(e) {
+                e.preventDefault();
+                const gearIndex = this.dataset.gear;
+                const details = document.querySelector(`.gear-details[data-gear="${gearIndex}"]`);
+
+                if (details) {
+                    details.classList.toggle('hidden');
+                }
+            });
+        });
     });
 
     function initializeCharts() {
