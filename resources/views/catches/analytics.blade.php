@@ -116,27 +116,87 @@
         <div class="p-6">
             <!-- Charts Tab -->
             <div id="chartsContent" class="tab-content">
+                @php
+                    $colorPalette = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+                    $gearColorPalette = ['#3b82f6', '#06b6d4', '#6366f1', '#84cc16', '#f59e0b', '#ef4444'];
+                    $zoneColorPalette = ['#3b82f6', '#06b6d4', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#10b981', '#f59e0b'];
+                @endphp
                 <div class="grid md:grid-cols-3 gap-6">
-                    <!-- Species Breakdown Pie Chart -->
-                    <div class="p-4 bg-white rounded border shadow">
-                        <h2 class="font-semibold text-gray-700 text-sm mb-4">Species Breakdown</h2>
-                        <canvas id="speciesChart" style="max-height: 300px;"></canvas>
+                    <!-- Species Breakdown -->
+                    <div class="bg-white rounded border shadow overflow-hidden">
+                        <div class="p-4 border-b border-gray-200">
+                            <h2 class="font-semibold text-gray-700 text-sm mb-4">Species Breakdown</h2>
+                            <canvas id="speciesChart" style="max-height: 300px;"></canvas>
+                        </div>
+                        <div class="p-4 max-h-64 overflow-y-auto">
+                            @if($topSpecies && $topSpecies->count() > 0)
+                                <div class="space-y-2 text-sm">
+                                    @foreach($topSpecies as $index => $s)
+                                        <div class="flex items-center justify-between pb-2 border-b border-gray-100 last:border-0">
+                                            <span class="text-gray-700 font-medium flex items-center gap-2">
+                                                <span class="w-3 h-3 rounded-full" style="background-color: {{ $colorPalette[$index % count($colorPalette)] }}"></span>
+                                                {{ $s->species?->common_name ?? 'Unknown' }}
+                                            </span>
+                                            <span class="text-gray-600 font-semibold">{{ number_format($s->qty_sum, 2) }} kg</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-gray-400 italic text-sm">No data available</p>
+                            @endif
+                        </div>
                     </div>
 
-                    <!-- Gear Breakdown Pie Chart -->
-                    <div class="p-4 bg-white rounded border shadow">
-                        <h2 class="font-semibold text-gray-700 text-sm mb-4">Gear Breakdown</h2>
-                        <canvas id="gearChart" style="max-height: 300px;"></canvas>
+                    <!-- Gear Breakdown -->
+                    <div class="bg-white rounded border shadow overflow-hidden">
+                        <div class="p-4 border-b border-gray-200">
+                            <h2 class="font-semibold text-gray-700 text-sm mb-4">Gear Breakdown</h2>
+                            <canvas id="gearChart" style="max-height: 300px;"></canvas>
+                        </div>
+                        <div class="p-4 max-h-64 overflow-y-auto">
+                            @if($gearBreakdown && $gearBreakdown->count() > 0)
+                                <div class="space-y-2 text-sm">
+                                    @foreach($gearBreakdown as $index => $g)
+                                        <div class="flex items-center justify-between pb-2 border-b border-gray-100 last:border-0">
+                                            <span class="text-gray-700 font-medium flex items-center gap-2">
+                                                <span class="w-3 h-3 rounded-full" style="background-color: {{ $gearColorPalette[$index % count($gearColorPalette)] }}"></span>
+                                                {{ $g->gear_type }}
+                                            </span>
+                                            <span class="text-gray-600 font-semibold">{{ number_format($g->qty, 2) }} kg</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-gray-400 italic text-sm">No data available</p>
+                            @endif
+                        </div>
                     </div>
 
-                    <!-- Zone Breakdown Pie Chart -->
-                    <div class="p-4 bg-white rounded border shadow">
-                        <h2 class="font-semibold text-gray-700 text-sm mb-4">Zone Breakdown</h2>
+                    <!-- Zone Breakdown -->
+                    <div class="bg-white rounded border shadow overflow-hidden">
+                        <div class="p-4 border-b border-gray-200">
+                            <h2 class="font-semibold text-gray-700 text-sm mb-4">Zone Breakdown</h2>
+                            @if($zoneBreakdown && $zoneBreakdown->count() > 0)
+                                <canvas id="zoneChart" style="max-height: 300px;"></canvas>
+                            @else
+                                <div class="flex items-center justify-center h-64 text-gray-400">
+                                    <p>No zone data available</p>
+                                </div>
+                            @endif
+                        </div>
                         @if($zoneBreakdown && $zoneBreakdown->count() > 0)
-                            <canvas id="zoneChart" style="max-height: 300px;"></canvas>
-                        @else
-                            <div class="flex items-center justify-center h-64 text-gray-400">
-                                <p>No zone data available</p>
+                            <div class="p-4 max-h-64 overflow-y-auto">
+                                <div class="space-y-2 text-sm">
+                                    @foreach($zoneBreakdown as $index => $z)
+                                        <div class="flex items-center justify-between pb-2 border-b border-gray-100 last:border-0">
+                                            <span class="text-gray-700 font-medium flex items-center gap-2">
+                                                <span class="w-3 h-3 rounded-full" style="background-color: {{ $zoneColorPalette[$index % count($zoneColorPalette)] }}"></span>
+                                                {{ $z->zone?->name ?? 'Unknown' }}
+                                            </span>
+                                            <span class="text-gray-600 font-semibold">{{ number_format($z->qty, 2) }} kg</span>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         @endif
                     </div>
