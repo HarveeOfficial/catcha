@@ -1,7 +1,7 @@
 <x-guest-layout>
     <!-- Logo -->
     <div class="flex justify-center mb-8">
-        <img src="{{ asset('logo/catcha_logo.png') }}" alt="Catcha Logo" class="h-32">
+        <img src="{{ asset('logo/catcha_logo_updated.png') }}" alt="Catcha Logo" class="h-32 w-auto">
     </div>
 
     <!-- Session Status -->

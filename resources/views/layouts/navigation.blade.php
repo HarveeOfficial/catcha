@@ -16,7 +16,7 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                     @if(auth()->check() && auth()->user()->isMao())
-                        <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics')">
+                        <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics') && ! request()->routeIs('catches.heatmap')">
                             {{ __('Catches') }}
                         </x-nav-link>
                         <x-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
@@ -26,7 +26,7 @@
                             {{ __('Heatmap') }}
                         </x-nav-link>
                     @else
-                        <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics')">
+                        <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics') && ! request()->routeIs('catches.heatmap')">
                             {{ __('Catches') }}
                         </x-nav-link>
                         @unless(auth()->check() && auth()->user()->role === 'expert')

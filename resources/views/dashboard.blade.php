@@ -5,134 +5,247 @@
         </h2>
     </x-slot>
 
-    <div class="py-6 bg-gray-50 min-h-screen">
+    <div class="py-6 bg-gradient-to-br from-blue-50 via-white to-indigo-50 min-h-screen">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if($showAdmin)
-                <div class="grid gap-6 md:grid-cols-4">
-                    <a href="{{ route('catches.analytics') }}" class="block p-4 bg-white shadow rounded border border-gray-200 hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300" aria-labelledby="card-site-totals">
-                        <h3 id="card-site-totals" class="text-sm font-semibold text-gray-600">Site Totals</h3>
-                        @if($siteTotals)
-                            <div class="mt-3 text-lg font-bold">{{ number_format($siteTotals->total_qty,2) }} kg</div>
-                            <div class="text-xs text-gray-500">{{ $siteTotals->catches }} catches • {{ $siteTotals->total_count }} pcs</div>
-                        @else
-                            <div class="text-gray-400 italic">No data</div>
-                        @endif
+                <!-- Admin Dashboard Header -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+                    <p class="text-gray-600 mt-1">Welcome back! Here's your fishing catch overview.</p>
+                </div>
+
+                <!-- Key Metrics Grid -->
+                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <!-- Site Totals Card -->
+                    <a href="{{ route('catches.analytics') }}" class="group relative overflow-hidden rounded-lg bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-l-4 border-blue-500">
+                        <div class="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-full -mr-8 -mt-8 group-hover:bg-blue-100 transition-colors"></div>
+                        <div class="relative z-10">
+                            <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Catch Weight</h3>
+                            @if($siteTotals)
+                                <div class="mt-4">
+                                    <div class="text-3xl font-bold text-blue-600">{{ number_format($siteTotals->total_qty, 2) }}</div>
+                                    <div class="text-sm text-gray-500 mt-1">kg</div>
+                                    <div class="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-200">{{ $siteTotals->catches }} catches • {{ $siteTotals->total_count }} fish</div>
+                                </div>
+                            @else
+                                <div class="text-gray-400 italic mt-4">No data yet</div>
+                            @endif
+                        </div>
                     </a>
 
-                    {{-- <a href="{{ route('profile.edit') }}" class="block p-4 bg-white shadow rounded border border-gray-200 hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300" aria-labelledby="card-users">
-                        <h3 id="card-users" class="text-sm font-semibold text-gray-600">Users</h3>
-                        <div class="mt-3 text-lg font-bold">{{ $userCount ?? '—' }}</div>
-                        <div class="text-xs text-gray-500">Registered users</div>
-                    </a> --}}
-
-                    <a href="{{ route('catches.index') }}" class="block p-4 bg-white shadow rounded border border-gray-200 hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300" aria-labelledby="card-species">
-                        <h3 id="card-species" class="text-sm font-semibold text-gray-600">Species</h3>
-                        <div class="mt-3 text-lg font-bold">{{ $speciesCount ?? '—' }}</div>
-                        <div class="text-xs text-gray-500">Species in catalogue</div>
+                    <!-- Species Card -->
+                    <a href="{{ route('catches.index') }}" class="group relative overflow-hidden rounded-lg bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-l-4 border-emerald-500">
+                        <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-50 rounded-bl-full -mr-8 -mt-8 group-hover:bg-emerald-100 transition-colors"></div>
+                        <div class="relative z-10">
+                            <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Species</h3>
+                            <div class="mt-4">
+                                <div class="text-3xl font-bold text-emerald-600">{{ $speciesCount ?? '—' }}</div>
+                                <div class="text-sm text-gray-500 mt-1">in catalogue</div>
+                                <div class="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-200">Catalogued species</div>
+                            </div>
+                        </div>
                     </a>
 
-                    {{-- <a href="{{ route('guidances.index') }}" class="block p-4 bg-white shadow rounded border border-gray-200 hover:shadow-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-sky-300" aria-labelledby="card-pending-guidances">
-                        <h3 id="card-pending-guidances" class="text-sm font-semibold text-gray-600">Pending Guidances</h3>
-                        @if($pendingGuidances && $pendingGuidances->isNotEmpty())
-                            <ul class="mt-2 space-y-1 text-sm max-h-48 overflow-auto">
-                                @foreach($pendingGuidances as $pg)
-                                    <li class="flex justify-between"><span class="truncate" title="{{ $pg->title }}">{{ Str::limit($pg->title,28) }}</span><span class="text-gray-400">#{{ $pg->id }}</span></li>
+                    <!-- Average Catch Weight -->
+                    <div class="group relative overflow-hidden rounded-lg bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-l-4 border-amber-500">
+                        <div class="absolute top-0 right-0 w-20 h-20 bg-amber-50 rounded-bl-full -mr-8 -mt-8"></div>
+                        <div class="relative z-10">
+                            <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Avg per Catch</h3>
+                            @if($siteTotals && $siteTotals->catches > 0)
+                                <div class="mt-4">
+                                    <div class="text-3xl font-bold text-amber-600">{{ number_format($siteTotals->total_qty / $siteTotals->catches, 2) }}</div>
+                                    <div class="text-sm text-gray-500 mt-1">kg</div>
+                                    <div class="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-200">Average weight</div>
+                                </div>
+                            @else
+                                <div class="text-gray-400 italic mt-4">No data</div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Fish Count Card -->
+                    <div class="group relative overflow-hidden rounded-lg bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-l-4 border-rose-500">
+                        <div class="absolute top-0 right-0 w-20 h-20 bg-rose-50 rounded-bl-full -mr-8 -mt-8"></div>
+                        <div class="relative z-10">
+                            <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Fish (KG)</h3>
+                            @if($siteTotals)
+                                <div class="mt-4">
+                                    <div class="text-3xl font-bold text-rose-600">{{ number_format($siteTotals->total_count) }}</div>
+                                    <div class="text-sm text-gray-500 mt-1">pieces</div>
+                                    <div class="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-200">Individual fish</div>
+                                </div>
+                            @else
+                                <div class="text-gray-400 italic mt-4">No data</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats Row -->
+                <div class="grid gap-4 md:grid-cols-3">
+                    <!-- Recent Activity -->
+                    <div class="rounded-lg bg-white p-6 shadow-md border-t-4 border-indigo-500">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Recent Catches</h3>
+                        @if($recentCatches->isNotEmpty())
+                            <ul class="space-y-2">
+                                @foreach($recentCatches->take(5) as $catch)
+                                    <li class="flex items-center justify-between text-sm pb-2 border-b border-gray-100 last:border-0">
+                                        <span class="text-gray-700 font-medium">{{ $catch->species?->common_name ?? 'Unknown' }}</span>
+                                        <span class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">{{ $catch->quantity }} pcs</span>
+                                    </li>
                                 @endforeach
                             </ul>
                         @else
-                            <div class="text-gray-400 italic mt-2">No pending guidances</div>
+                            <p class="text-gray-400 italic text-sm">No catches recorded yet</p>
                         @endif
-                    </a> --}}
+                    </div>
+
+                    <!-- Monthly Trend -->
+                    <div class="rounded-lg bg-white p-6 shadow-md border-t-4 border-emerald-500">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Last 6 Months</h3>
+                        @if($monthlyTotals->isNotEmpty())
+                            <ul class="space-y-2">
+                                @foreach($monthlyTotals->take(6) as $month)
+                                    <li class="flex items-center justify-between text-sm pb-2 border-b border-gray-100 last:border-0">
+                                        <span class="text-gray-600">{{ $month->ym }}</span>
+                                        <span class="font-semibold text-emerald-600">{{ number_format($month->total_qty, 1) }} kg</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="text-gray-400 italic text-sm">No data available</p>
+                        @endif
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="rounded-lg bg-blue-500 p-6 shadow-md text-white">
+                        <h3 class="text-sm font-semibold uppercase tracking-wide mb-4">Quick Actions</h3>
+                        <div class="space-y-2">
+                            <a href="{{ route('catches.index') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center">
+                                View All Catches
+                            </a>
+                            <a href="{{ route('catches.analytics') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center">
+                                Detailed Analytics
+                            </a>
+                            <a href="{{ route('admin.zones.index') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center">
+                                Manage Zones
+                            </a>
+                            <a href="{{ route('catches.heatmap') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center">
+                                View Heatmap
+                            </a>
+                        </div>
+                    </div>
                 </div>
             @else
-                <div class="grid gap-6 md:grid-cols-3">
-                    <div class="p-4 bg-white shadow rounded border border-gray-200">
-                        <h3 class="text-sm font-semibold text-gray-600">Recent Catches</h3>
-                        <ul class="mt-2 space-y-1 text-sm max-h-48 overflow-auto">
-                            @forelse($recentCatches as $c)
-                                <li class="flex justify-between">
-                                    <span>{{ $c->species?->common_name ?? 'Unknown' }}</span>
-                                    <span class="text-gray-500">{{ $c->quantity }} pcs</span>
-                                </li>
-                            @empty
-                                <li class="text-gray-400 italic">None yet</li>
-                            @endforelse
-                        </ul>
+                <!-- User Dashboard Header -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+                    <p class="text-gray-600 mt-1">Track your fishing catches and view forecasts.</p>
+                </div>
+
+                <!-- User Stats Grid -->
+                <div class="grid gap-6 md:grid-cols-2">
+                    <!-- Recent Catches Card -->
+                    <div class="rounded-lg bg-white p-6 shadow-md border-t-4 border-blue-500">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Recent Catches
+                        </h3>
+                        @if($recentCatches->isNotEmpty())
+                            <ul class="space-y-3">
+                                @foreach($recentCatches->take(5) as $c)
+                                    <li class="flex items-center justify-between pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                                        <span class="text-gray-700 font-medium">{{ $c->species?->common_name ?? 'Unknown Species' }}</span>
+                                        <span class="inline-block px-3 py-1 text-xs bg-blue-100 text-blue-700 font-semibold rounded-full">{{ $c->quantity }} pcs</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="text-gray-400 italic text-sm">No catches recorded yet</p>
+                        @endif
                     </div>
-                    <div class="p-4 bg-white shadow rounded border border-gray-200">
-                        <h3 class="text-sm font-semibold text-gray-600">Monthly Totals (qty)</h3>
-                        <ul class="mt-2 space-y-1 text-sm">
-                            @foreach($monthlyTotals as $m)
-                                <li class="flex justify-between">
-                                    <span>{{ $m->ym }}</span>
-                                    <span class="text-gray-500">{{ $m->total_qty }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
+
+                    <!-- Monthly Totals Card -->
+                    <div class="rounded-lg bg-white p-6 shadow-md border-t-4 border-emerald-500">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            Last 6 Months
+                        </h3>
+                        @if($monthlyTotals->isNotEmpty())
+                            <ul class="space-y-2">
+                                @foreach($monthlyTotals->take(6) as $m)
+                                    <li class="flex items-center justify-between pb-2 border-b border-gray-100 last:border-0">
+                                        <span class="text-gray-600 font-medium">{{ $m->ym }}</span>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-24 bg-emerald-100 h-2 rounded-full overflow-hidden">
+                                                <div class="bg-emerald-500 h-full" style="width: {{ min(100, ($m->total_qty / 200) * 100) }}%"></div>
+                                            </div>
+                                            <span class="font-semibold text-emerald-600 w-12 text-right">{{ number_format($m->total_qty, 1) }} kg</span>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="text-gray-400 italic text-sm">No data available</p>
+                        @endif
                     </div>
-                    {{-- <div class="p-4 bg-white shadow rounded border border-gray-200">
-                        <h3 class="text-sm font-semibold text-gray-600">Active Guidances</h3>
-                        <ul class="mt-2 space-y-1 text-sm max-h-48 overflow-auto">
-                            @forelse($activeGuidances as $g)
-                                <li class="flex justify-between">
-                                    <span class="truncate" title="{{ $g->title }}">{{ Str::limit($g->title,28) }}</span>
-                                    <span class="text-gray-400">#{{ $g->id }}</span>
-                                </li>
-                            @empty
-                                <li class="text-gray-400 italic">No active guidance</li>
-                            @endforelse
-                        </ul>
-                    </div> --}}
                 </div>
             @endif
 
             @unless($showAdmin)
-            <div id="weather" class="p-4 bg-white shadow rounded border border-gray-200">
-                <h3 class="text-sm font-semibold text-gray-700 mb-3">Weather (Current & 5 Day Forecast)</h3>
-                <div class="flex flex-wrap gap-4 items-start">
-                    <div class="w-full md:w-64 space-y-3">
+            <div id="weather" class="mt-6 p-6 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-lg shadow-md border border-cyan-100">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9.5M19 4h-.5a4 4 0 00-7.86 1.46A4 4 0 008.5 16H5a4 4 0 010-8h10"></path></svg>
+                    Weather & Forecast
+                </h3>
+                <div class="flex flex-wrap gap-6 items-start">
+                    <div class="w-full md:w-64 space-y-4">
                         <div class="space-y-2">
-                            <label class="block text-xs font-semibold text-gray-600">Auto Detect Location</label>
-                            <button id="detectBtn" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs shadow">Detect</button>
+                            <label class="block text-sm font-semibold text-gray-700">Auto Detect Location</label>
+                            <button id="detectBtn" class="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium shadow-md transition">
+                                📍 Detect My Location
+                            </button>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-[10px] uppercase tracking-wide text-gray-500">Lat</label>
-                                <input id="latInput" type="number" step="0.001" class="w-full border-gray-300 rounded text-xs bg-white" placeholder="13.412" />
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Latitude</label>
+                                <input id="latInput" type="number" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="13.412" />
                             </div>
                             <div>
-                                <label class="block text-[10px] uppercase tracking-wide text-gray-500">Lon</label>
-                                <input id="lonInput" type="number" step="0.001" class="w-full border-gray-300 rounded text-xs bg-white" placeholder="122.562" />
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">Longitude</label>
+                                <input id="lonInput" type="number" step="0.001" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="122.562" />
                             </div>
                         </div>
-                        <button id="loadWeatherBtn" class="w-full px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded text-xs shadow">Load Weather</button>
-                        <div id="weatherStatus" class="text-xs text-gray-500"></div>
-                        <div id="currentWeather" class="hidden border rounded p-2 text-xs space-y-2 bg-gray-100">
-                            <div class="flex items-center gap-2">
-                                <img id="cwIcon" class="w-8 h-8" alt="" />
+                        <button id="loadWeatherBtn" class="w-full px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-medium shadow-md transition">
+                            Load Weather
+                        </button>
+                        <div id="weatherStatus" class="text-xs text-gray-600"></div>
+                        <div id="currentWeather" class="hidden border-2 border-blue-200 rounded-lg p-3 text-sm space-y-3 bg-white">
+                            <div class="flex items-center gap-3">
+                                <img id="cwIcon" class="w-12 h-12" alt="" />
                                 <div>
-                                    <div id="cwTemp" class="font-semibold text-base"></div>
-                                    <div id="cwCond" class="capitalize"></div>
+                                    <div id="cwTemp" class="font-bold text-2xl text-gray-800"></div>
+                                    <div id="cwCond" class="capitalize text-gray-600"></div>
                                 </div>
                             </div>
-                            <div id="weatherAdvice" class="hidden text-[11px] leading-snug font-medium px-2 py-1 rounded border"></div>
-                            <div class="grid grid-cols-2 gap-x-2">
-                                <div>Humidity: <span id="cwHum"></span>%</div>
-                                <div>Wind: <span id="cwWind"></span> km/h</div>
-                                <div>Precip: <span id="cwPrecip"></span> mm</div>
-                                <div class="col-span-2 text-[10px] text-gray-400" id="cwSource"></div>
+                            <div id="weatherAdvice" class="hidden text-xs leading-relaxed font-medium px-3 py-2 rounded border-l-4 bg-blue-50"></div>
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="bg-gray-50 p-2 rounded"><span class="text-gray-500">Humidity</span><br><span class="font-semibold text-gray-700"><span id="cwHum"></span>%</span></div>
+                                <div class="bg-gray-50 p-2 rounded"><span class="text-gray-500">Wind</span><br><span class="font-semibold text-gray-700"><span id="cwWind"></span> km/h</span></div>
+                                <div class="bg-gray-50 p-2 rounded col-span-2"><span class="text-gray-500">Precipitation</span><br><span class="font-semibold text-gray-700"><span id="cwPrecip"></span> mm</span></div>
+                                <div class="text-gray-400 col-span-2 text-[10px]" id="cwSource"></div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex-1 space-y-4 min-w-[260px]">
+                    <div class="flex-1 space-y-4 min-w-[300px]">
                         <div>
-                            <h4 class="text-xs font-semibold text-gray-600 mb-1">Daily Summary</h4>
-                            <div id="dailyForecast" class="flex gap-2 overflow-x-auto pb-1"></div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Daily Summary (5 Days)</h4>
+                            <div id="dailyForecast" class="flex gap-3 overflow-x-auto pb-2 snap-x"></div>
                         </div>
                         <div>
-                            <h4 class="text-xs font-semibold text-gray-600 mb-1">Hourly (Next 24)</h4>
-                            <div id="hourlyForecast" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 text-[11px]"></div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Hourly Forecast (Next 24 Hours)</h4>
+                            <div id="hourlyForecast" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 text-[11px]"></div>
                         </div>
                     </div>
                 </div>
