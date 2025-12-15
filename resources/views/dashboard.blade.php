@@ -195,8 +195,7 @@
             @unless($showAdmin)
             <div id="weather" class="mt-6 p-6 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-lg shadow-md border border-cyan-100">
                 <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9.5M19 4h-.5a4 4 0 00-7.86 1.46A4 4 0 008.5 16H5a4 4 0 010-8h10"></path></svg>
-                    Weather & Forecast
+                ☁️ Weather & Forecast
                 </h3>
                 <div class="flex flex-wrap gap-6 items-start">
                     <div class="w-full md:w-64 space-y-4">
