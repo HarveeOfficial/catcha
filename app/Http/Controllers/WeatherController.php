@@ -46,6 +46,7 @@ class WeatherController extends Controller
                 'wind_dir_deg' => $p['wind']['deg'] ?? null,
                 'precipitation_mm' => $p['rain']['1h'] ?? $p['snow']['1h'] ?? 0,
                 'conditions' => $p['weather'][0]['description'] ?? null,
+                'icon' => $p['weather'][0]['icon'] ?? null,
                 'source' => 'openweather',
             ];
         });

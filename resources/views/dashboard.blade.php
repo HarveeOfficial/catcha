@@ -91,7 +91,7 @@
                                 @foreach($recentCatches->take(5) as $catch)
                                     <li class="flex items-center justify-between text-sm pb-2 border-b border-gray-100 last:border-0">
                                         <span class="text-gray-700 font-medium">{{ $catch->species?->common_name ?? 'Unknown' }}</span>
-                                        <span class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">{{ $catch->quantity }} pcs</span>
+                                        <span class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">{{ $catch->quantity }} kg.</span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -156,7 +156,7 @@
                                 @foreach($recentCatches->take(5) as $c)
                                     <li class="flex items-center justify-between pb-3 border-b border-gray-100 last:border-0 last:pb-0">
                                         <span class="text-gray-700 font-medium">{{ $c->species?->common_name ?? 'Unknown Species' }}</span>
-                                        <span class="inline-block px-3 py-1 text-xs bg-blue-100 text-blue-700 font-semibold rounded-full">{{ $c->quantity }} pcs</span>
+                                        <span class="inline-block px-3 py-1 text-xs bg-blue-100 text-blue-700 font-semibold rounded-full">{{ $c->quantity }} kg.</span>
                                     </li>
                                 @endforeach
                             </ul>
