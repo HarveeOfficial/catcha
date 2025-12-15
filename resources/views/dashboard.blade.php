@@ -377,7 +377,11 @@
             });
         }
 
-        // Optionally load with cached coords if available
-        // Could auto-detect on first load
+        // Load with Aparri location (northernmost city in Cagayan, Philippines)
+        window.addEventListener('load', () => {
+            latInput.value = '18.3545';
+            lonInput.value = '121.6392';
+            loadWeather();
+        });
     </script>
 </x-app-layout>
