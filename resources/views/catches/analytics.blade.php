@@ -593,6 +593,13 @@
             // Ensure map takes full container size
             setTimeout(() => map.invalidateSize(), 100);
 
+            // Create custom panes for proper z-index layering
+            map.createPane('zones');
+            map.getPane('zones').style.zIndex = 200;
+            
+            map.createPane('catches');
+            map.getPane('catches').style.zIndex = 400;
+
             // Add tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors',
@@ -617,6 +624,7 @@
                         const geom = typeof zone.geometry === 'string' ? JSON.parse(zone.geometry) : zone.geometry;
                         
                         L.geoJSON(geom, {
+                            pane: 'zones',
                             style: {
                                 color: color,
                                 weight: 2,
@@ -702,15 +710,33 @@
                         });
                         
                         const size = Math.min(Math.max(weight / 2, 5), 15);
-                        const hasIssues = (zones.length > 0 && (!isInCorrectZone || wrongSpeciesZones.length > 0));
-                        const markerColor = hasIssues ? '#ef4444' : '#3b82f6';
-                        const markerBorder = hasIssues ? '#dc2626' : '#1e40af';
+                        
+                        // Determine marker color based on zone status
+                        let markerColor, markerBorder, markerWeight;
+                        
+                        if (isInCorrectZone) {
+                            // Green - in zone and correctly located
+                            markerColor = '#10b981';
+                            markerBorder = '#059669';
+                            markerWeight = 1;
+                        } else if (zones.length === 0) {
+                            // Blue - not in any zone
+                            markerColor = '#3b82f6';
+                            markerBorder = '#1e40af';
+                            markerWeight = 1;
+                        } else {
+                            // Red - in zone but not located in zone itself
+                            markerColor = '#ef4444';
+                            markerBorder = '#dc2626';
+                            markerWeight = 2;
+                        }
                         
                         const marker = L.circleMarker([lat, lng], {
+                            pane: 'catches',
                             radius: size,
                             fillColor: markerColor,
                             color: markerBorder,
-                            weight: hasIssues ? 2 : 1,
+                            weight: markerWeight,
                             opacity: 0.7,
                             fillOpacity: 0.6
                         }).addTo(map);
@@ -795,6 +821,7 @@
                         
                         // Add intersection layer
                         const intersectionLayer = L.geoJSON(intersection, {
+                            pane: 'zones',
                             style: {
                                 color: '#FF6B00',
                                 weight: 3,
