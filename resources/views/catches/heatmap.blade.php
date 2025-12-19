@@ -6,9 +6,17 @@
         <div class="bg-white p-4 rounded border shadow space-y-4">
             <div class="flex items-center justify-between flex-wrap gap-3">
                 <p class="text-sm text-gray-600">Aggregated heatmap of ALL recorded catches (all species, all dates) within your visibility scope.</p>
-                <div class="flex items-center gap-2 text-xs">
-                    <label>Radius <input id="radiusInput" type="range" min="10" max="50" value="22" class="align-middle" /></label>
-                    <label>Blur <input id="blurInput" type="range" min="5" max="40" value="16" class="align-middle" /></label>
+                <div class="flex items-center gap-4 text-xs">
+                    <label class="flex items-center gap-1">
+                        <span class="font-medium w-12">Radius:</span>
+                        <input id="radiusInput" type="range" min="10" max="50" value="22" class="align-middle w-24" />
+                        <span id="radiusValue" class="w-6">22</span>
+                    </label>
+                    <label class="flex items-center gap-1">
+                        <span class="font-medium w-12">Blur:</span>
+                        <input id="blurInput" type="range" min="5" max="40" value="16" class="align-middle w-24" />
+                        <span id="blurValue" class="w-6">16</span>
+                    </label>
                     <button id="refreshBtn" class="px-3 py-2 bg-indigo-600 text-white rounded font-medium">Reload</button>
                 </div>
             </div>
@@ -158,8 +166,14 @@
                 });
                 document.getElementById('refreshBtn').addEventListener('click', e => { e.preventDefault(); loadData(); });
                 // Always reload on slider change so radius/blur updates immediately.
-                radiusInput.addEventListener('input', () => { loadData(); });
-                blurInput.addEventListener('input', () => { loadData(); });
+                radiusInput.addEventListener('input', () => {
+                    document.getElementById('radiusValue').textContent = radiusInput.value;
+                    loadData();
+                });
+                blurInput.addEventListener('input', () => {
+                    document.getElementById('blurValue').textContent = blurInput.value;
+                    loadData();
+                });
                 // ensure proper sizing after layout
                 requestAnimationFrame(()=>{ map.invalidateSize(); });
                 setTimeout(()=>{ map.invalidateSize(); }, 400);

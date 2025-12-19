@@ -62,12 +62,12 @@
                     <div class="group relative overflow-hidden rounded-lg bg-white p-6 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-l-4 border-rose-500">
                         <div class="absolute top-0 right-0 w-20 h-20 bg-rose-50 rounded-bl-full -mr-8 -mt-8"></div>
                         <div class="relative z-10">
-                            <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Fish (KG)</h3>
+                            <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Total Fish</h3>
                             @if($siteTotals)
                                 <div class="mt-4">
                                     <div class="text-3xl font-bold text-rose-600">{{ number_format($siteTotals->total_count) }}</div>
                                     <div class="text-sm text-gray-500 mt-1">pieces</div>
-                                    <div class="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-200">Individual fish</div>
+                                    <div class="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-200">Individual fish / excluding uncountable</div>
                                 </div>
                             @else
                                 <div class="text-gray-400 italic mt-4">No data</div>
@@ -86,7 +86,7 @@
                                 @foreach($recentCatches->take(5) as $catch)
                                     <li class="flex items-center justify-between text-sm pb-2 border-b border-gray-100 last:border-0">
                                         <span class="text-gray-700 font-medium">{{ $catch->species?->common_name ?? 'Unknown' }}</span>
-                                        <span class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">{{ $catch->quantity }} kg.</span>
+                                        <span class="font-semibold text-indigo-500">{{ number_format($catch->quantity, 1) }} kg</span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -113,19 +113,19 @@
                     </div>
 
                     <!-- Quick Actions -->
-                    <div class="rounded-lg bg-blue-500 p-6 shadow-md text-white">
-                        <h3 class="text-sm font-semibold uppercase tracking-wide mb-4">Quick Actions</h3>
+                    <div class="rounded-lg bg-white p-6 shadow-md border-t-4 border-blue-500">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Quick Actions</h3>
                         <div class="space-y-2">
-                            <a href="{{ route('catches.index') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center">
+                            <a href="{{ route('catches.index') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center text-white">
                                 View All Catches
                             </a>
-                            <a href="{{ route('catches.analytics') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center">
+                            <a href="{{ route('catches.analytics') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center text-white">
                                 Detailed Analytics
                             </a>
-                            <a href="{{ route('admin.zones.index') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center">
+                            <a href="{{ route('admin.zones.index') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center text-white">
                                 Manage Zones
                             </a>
-                            <a href="{{ route('catches.heatmap') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center">
+                            <a href="{{ route('catches.heatmap') }}" class="block px-4 py-2 bg-blue-400 hover:bg-blue-300 rounded transition text-sm font-medium text-center text-white">
                                 View Heatmap
                             </a>
                         </div>

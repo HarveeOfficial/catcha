@@ -67,6 +67,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === 'mao';
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'superadmin';
+    }
+
     /**
      * Send the password reset notification.
      */

@@ -12,10 +12,20 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                    @if(auth()->check() && auth()->user()->isMao())
+                    @if(auth()->check() && auth()->user()->isSuperAdmin())
+                        <x-nav-link :href="route('superadmin.dashboard')" :active="request()->routeIs('superadmin.dashboard')">
+                            {{ __('Dashboard') }}
+                        </x-nav-link>
+                    @else
+                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                            {{ __('Dashboard') }}
+                        </x-nav-link>
+                    @endif
+                    @if(auth()->check() && auth()->user()->isSuperAdmin())
+                        <x-nav-link :href="route('superadmin.users.index')" :active="request()->routeIs('superadmin.users.*')">
+                            {{ __('Users') }}
+                        </x-nav-link>
+                    @elseif(auth()->check() && auth()->user()->isMao())
                         <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics') && ! request()->routeIs('catches.heatmap')">
                             {{ __('Catches') }}
                         </x-nav-link>
@@ -57,11 +67,11 @@
                             {{ __('Heatmap') }}
                         </x-nav-link>
                         @endunless
-                        @can('viewLiveTracksAdmin')
+                        {{-- @can('viewLiveTracksAdmin')
                             <x-nav-link :href="route('live-tracks.index')" :active="request()->routeIs('live-tracks.*')">
                                 {{ __('Live Track') }}
                             </x-nav-link>
-                        @endcan
+                        @endcan --}}
                         @if(auth()->check() && auth()->user()->isAdmin())
                             <x-nav-link :href="route('admin.zones.index')" :active="request()->routeIs('admin.zones.*')">
                                 {{ __('Zones') }}
@@ -79,7 +89,6 @@
                             <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-black bg-white hover:text-black focus:outline-none transition ease-in-out duration-150">
                                 <div class="flex items-center gap-2">
                                     <span>{{ Auth::user()->name }}</span>
-                                    <span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-gray-200 text-black">{{ Auth::user()->role ?? 'fisher' }}</span>
                                 </div>
 
                                 <div class="ms-1">
@@ -131,10 +140,20 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            @if(auth()->check() && auth()->user()->isMao())
+            @if(auth()->check() && auth()->user()->isSuperAdmin())
+                <x-responsive-nav-link :href="route('superadmin.dashboard')" :active="request()->routeIs('superadmin.dashboard')">
+                    {{ __('Dashboard') }}
+                </x-responsive-nav-link>
+            @else
+                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                    {{ __('Dashboard') }}
+                </x-responsive-nav-link>
+            @endif
+            @if(auth()->check() && auth()->user()->isSuperAdmin())
+                <x-responsive-nav-link :href="route('superadmin.users.index')" :active="request()->routeIs('superadmin.users.*')">
+                    {{ __('Users') }}
+                </x-responsive-nav-link>
+            @elseif(auth()->check() && auth()->user()->isMao())
                 <x-responsive-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.index')">
                     {{ __('Catches') }}
                 </x-responsive-nav-link>

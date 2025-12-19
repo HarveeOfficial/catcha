@@ -586,4 +586,116 @@ class CatchAnalyticsController extends Controller
             'discardReasons' => $discardReasons,
         ]);
     }
+
+    public function exportPdf(Request $request)
+    {
+        $user = Auth::user();
+
+        // Experts are not allowed to access analytics
+        if ($user->isExpert()) {
+            abort(403, 'Experts cannot access analytics.');
+        }
+
+        // Scope: fishers see only their own catches; admins and mao see all (optionally filter by user)
+        $base = FishCatch::query();
+        if (! $user->isAdmin() && ! $user->isMao()) {
+            $base->where('user_id', $user->id);
+        } elseif (($user->isAdmin() || $user->isMao()) && $request->filled('user')) {
+            $base->whereHas('user', function ($q) use ($request) {
+                $q->where('name', 'like', '%'.$request->input('user').'%');
+            });
+        }
+
+        // Date range filters
+        if ($request->filled('from')) {
+            $base->where('caught_at', '>=', $request->date('from')->startOfDay());
+        }
+        if ($request->filled('to')) {
+            $base->where('caught_at', '<=', $request->date('to')->endOfDay());
+        }
+
+        $driver = DB::getDriverName();
+        $dateExprDay = match ($driver) {
+            'mysql','mariadb' => 'DATE(caught_at)',
+            'pgsql' => 'DATE(caught_at)',
+            'sqlite' => 'DATE(caught_at)',
+            'sqlsrv' => 'CAST(caught_at AS date)',
+            default => 'DATE(caught_at)'
+        };
+        $dateExprMonth = match ($driver) {
+            'mysql','mariadb' => "DATE_FORMAT(caught_at, '%Y-%m')",
+            'pgsql' => "TO_CHAR(caught_at, 'YYYY-MM')",
+            'sqlite' => "strftime('%Y-%m', caught_at)",
+            'sqlsrv' => "FORMAT(caught_at, 'yyyy-MM')",
+            default => "DATE_FORMAT(caught_at, '%Y-%m')"
+        };
+        $dateExprYear = match ($driver) {
+            'mysql','mariadb' => 'YEAR(caught_at)',
+            'pgsql' => 'EXTRACT(YEAR FROM caught_at)',
+            'sqlite' => "strftime('%Y', caught_at)",
+            'sqlsrv' => 'YEAR(caught_at)',
+            default => 'YEAR(caught_at)'
+        };
+
+        $totalSummary = (clone $base)
+            ->selectRaw('COUNT(*) as catches, SUM(quantity) as total_qty, SUM(count) as total_count, AVG(avg_size_cm) as avg_size')
+            ->first();
+
+        $topSpecies = (clone $base)
+            ->selectRaw('species_id, SUM(quantity) as qty_sum')
+            ->groupBy('species_id')
+            ->orderByDesc('qty_sum')
+            ->limit(10)
+            ->with('species')
+            ->get();
+
+        $monthlySeries = (clone $base)
+            ->selectRaw("$dateExprMonth as ym, SUM(quantity) as qty, SUM(count) as catch_count")
+            ->groupBy('ym')
+            ->orderBy('ym', 'desc')
+            ->limit(6)
+            ->get();
+
+        $gearBreakdown = (clone $base)
+            ->selectRaw('gear_type_id, SUM(quantity) as qty, COUNT(*) as catches')
+            ->with('gearType')
+            ->groupBy('gear_type_id')
+            ->orderByDesc('qty')
+            ->get()
+            ->map(function ($item) {
+                $item->gear_type = $item->gearType?->name ?? 'Unknown';
+
+                return $item;
+            });
+
+        $zoneBreakdown = (clone $base)
+            ->selectRaw('zone_id, SUM(quantity) as qty, COUNT(*) as catches')
+            ->with('zone')
+            ->groupBy('zone_id')
+            ->orderByDesc('qty')
+            ->get();
+
+        $data = [
+            'totalSummary' => $totalSummary,
+            'topSpecies' => $topSpecies,
+            'monthlySeries' => $monthlySeries,
+            'gearBreakdown' => $gearBreakdown,
+            'zoneBreakdown' => $zoneBreakdown,
+            'generatedAt' => now(),
+            'user' => $user,
+            'dateFrom' => $request->filled('from') ? $request->date('from') : null,
+            'dateTo' => $request->filled('to') ? $request->date('to') : null,
+        ];
+
+        $pdf = app('dompdf.wrapper');
+        $pdf->loadView('exports.analytics-pdf', $data);
+        $pdf->setPaper('a4', 'portrait');
+
+        $dateRange = '';
+        if ($request->filled('from') && $request->filled('to')) {
+            $dateRange = '-'.$request->date('from')->format('Y-m-d').'-to-'.$request->date('to')->format('Y-m-d');
+        }
+
+        return $pdf->download(sprintf('catch-analytics-report%s-%s.pdf', $dateRange, now()->format('Y-m-d-His')));
+    }
 }

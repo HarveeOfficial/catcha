@@ -13,7 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // API bearer token middleware alias
-        $middleware->alias(['api.token' => \App\Http\Middleware\ApiTokenMiddleware::class]);
+        $middleware->alias([
+            'api.token' => \App\Http\Middleware\ApiTokenMiddleware::class,
+            'is.superadmin' => \App\Http\Middleware\IsSuperAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

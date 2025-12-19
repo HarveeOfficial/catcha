@@ -28,10 +28,16 @@ class DatabaseSeeder extends Seeder
         //     'role' => 'expert',
         //     'password' => bcrypt('password'),
         // ]);
+        // User::factory()->create([
+        //     'name' => 'MAO',
+        //     'email' => 'mao@catcha.com',
+        //     'role' => 'mao',
+        //     'password' => bcrypt('password'),
+        // ]);
         User::factory()->create([
-            'name' => 'MAO',
-            'email' => 'mao@catcha.com',
-            'role' => 'mao',
+            'name' => 'Super Admin',
+            'email' => 'superadmin@catcha.com',
+            'role' => 'superadmin',
             'password' => bcrypt('password'),
         ]);
 

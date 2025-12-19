@@ -4,15 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\FishCatch;
 use App\Models\Guidance;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function __invoke()
+    public function __invoke(): RedirectResponse|View
     {
-        $userId = Auth::id();
         $user = Auth::user();
+
+        // Redirect superadmin users to their dashboard
+        if ($user && $user->isSuperAdmin()) {
+            return redirect()->route('superadmin.dashboard');
+        }
+
+        $userId = Auth::id();
 
         // Experts, admins, and mao see all recent catches; regular users see only their own
         $recentCatchesQuery = FishCatch::with(['species']);

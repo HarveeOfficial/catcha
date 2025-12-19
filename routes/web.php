@@ -12,10 +12,13 @@ use App\Http\Controllers\HeatmapController;
 use App\Http\Controllers\LiveTrackController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicAnalyticsController;
+use App\Http\Controllers\SuperAdminDashboardController;
+use App\Http\Controllers\SuperAdminUserController;
 use App\Http\Controllers\WeatherCityController;
 use App\Http\Controllers\WeatherController;
 use App\Http\Controllers\WeatherForecastController;
 use App\Http\Middleware\IsAdmin;
+use App\Http\Middleware\IsSuperAdmin;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -83,6 +86,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('catches.update');
     // Place analytics BEFORE the parameter route to avoid being captured by {fishCatch}
     Route::get('/catches/analytics', CatchAnalyticsController::class)->name('catches.analytics');
+    Route::get('/catches/analytics/export-pdf', [CatchAnalyticsController::class, 'exportPdf'])->name('catches.analytics.export-pdf');
     Route::get('/catches/{fishCatch}', [CatchController::class, 'show'])
         ->whereNumber('fishCatch')
         ->name('catches.show');
@@ -161,6 +165,17 @@ Route::middleware(['auth', IsAdmin::class])->prefix('admin')->name('admin.')->gr
     Route::get('/zones/{zone}/edit', [ZoneController::class, 'edit'])->name('zones.edit');
     Route::patch('/zones/{zone}', [ZoneController::class, 'update'])->name('zones.update');
     Route::delete('/zones/{zone}', [ZoneController::class, 'destroy'])->name('zones.destroy');
+});
+
+// Superadmin Routes (only for superadmins)
+Route::middleware(['auth', IsSuperAdmin::class])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/dashboard', [SuperAdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/users', [SuperAdminUserController::class, 'index'])->name('users.index');
+    Route::get('/users/create', [SuperAdminUserController::class, 'create'])->name('users.create');
+    Route::post('/users', [SuperAdminUserController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}/edit', [SuperAdminUserController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{user}', [SuperAdminUserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [SuperAdminUserController::class, 'destroy'])->name('users.destroy');
 });
 
 // Public API for zone data

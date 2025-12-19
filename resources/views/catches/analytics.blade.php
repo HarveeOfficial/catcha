@@ -7,7 +7,21 @@
 
     <!-- Summary Report Section -->
     <div class="bg-white rounded-lg shadow-md p-8">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Catch Analytics Report</h2>
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Catch Analytics Report</h2>
+            <div class="flex gap-2 items-center">
+                <div class="flex gap-2">
+                    <input type="date" id="pdf-from" placeholder="From" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="date" id="pdf-to" placeholder="To" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <a id="pdf-download-btn" href="{{ route('catches.analytics.export-pdf') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2m0 0v-8m0 8l-9-2m9 2l9-2m-9-8l-9-2m9 2l9 2m0-8V5m0 8H3m0 0h9"></path>
+                    </svg>
+                    Download PDF
+                </a>
+            </div>
+        </div>
         
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -1254,3 +1268,27 @@
 
 
 </x-app-layout>
+
+<script>
+    // PDF Date Filter Handler
+    document.getElementById('pdf-from').addEventListener('change', updatePdfLink);
+    document.getElementById('pdf-to').addEventListener('change', updatePdfLink);
+
+    function updatePdfLink() {
+        const fromDate = document.getElementById('pdf-from').value;
+        const toDate = document.getElementById('pdf-to').value;
+        const btn = document.getElementById('pdf-download-btn');
+        
+        let url = '{{ route("catches.analytics.export-pdf") }}';
+        const params = new URLSearchParams();
+        
+        if (fromDate) params.append('from', fromDate);
+        if (toDate) params.append('to', toDate);
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        btn.href = url;
+    }
+</script>
