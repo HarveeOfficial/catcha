@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8898866d48f2f1e32fb8302d7b6d5c4c",
+    "content-hash": "bc54887a0b09c6cef0a6fe07e7e940e1",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -3636,6 +3636,46 @@
                 "source": "https://github.com/ramsey/uuid/tree/4.9.0"
             },
             "time": "2025-06-25T14:20:11+00:00"
+        },
+        {
+            "name": "rootscratch/psgc",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jaycee0610/PSGC-API.git",
+                "reference": "ab15a25f91b072ff7de62fba8043f6233b347102"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jaycee0610/PSGC-API/zipball/ab15a25f91b072ff7de62fba8043f6233b347102",
+                "reference": "ab15a25f91b072ff7de62fba8043f6233b347102",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^7.9"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Rootscratch\\PSGC\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "John Christian Natividad",
+                    "email": "jaycee@rootscratch.com"
+                }
+            ],
+            "description": "Philippine Standard Geographic Code API By Rootscratch",
+            "support": {
+                "issues": "https://github.com/jaycee0610/PSGC-API/issues",
+                "source": "https://github.com/jaycee0610/PSGC-API/tree/v1.1.0"
+            },
+            "time": "2025-02-18T15:01:43+00:00"
         },
         {
             "name": "sabberworm/php-css-parser",

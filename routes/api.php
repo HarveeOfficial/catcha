@@ -1,9 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\LiveTrackController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\CatchController;
+use App\Http\Controllers\LiveTrackController;
+use App\Http\Controllers\LocationController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,4 +43,11 @@ Route::post('login', [AuthController::class, 'login'])->name('api.login');
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout'])->name('api.logout');
     Route::get('user', [AuthController::class, 'me'])->name('api.me');
+});
+
+// Location API (PSGC data for cascading dropdowns)
+Route::prefix('locations')->group(function () {
+    Route::get('regions', [LocationController::class, 'getRegions'])->name('api.locations.regions');
+    Route::get('municipalities', [LocationController::class, 'getMunicipalitiesByRegion'])->name('api.locations.municipalities');
+    Route::get('barangays', [LocationController::class, 'getBarangaysByMunicipality'])->name('api.locations.barangays');
 });

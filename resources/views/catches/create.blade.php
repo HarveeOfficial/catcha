@@ -187,6 +187,37 @@
                         <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700 text-sm font-bold">4</span>
                         Location
                     </legend>
+
+                    <!-- PSGC Cascading Dropdowns -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                        <h3 class="font-semibold text-blue-900 mb-4">Location Service (PSGC)</h3>
+                        <div class="grid gap-4 md:grid-cols-3">
+                            <div>
+                                <x-input-label for="region" value="Region" />
+                                <select id="region" name="region" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                    <option value="">Loading regions...</option>
+                                </select>
+                                <x-input-error :messages="$errors->get('region')" class="mt-1" />
+                            </div>
+
+                            <div>
+                                <x-input-label for="municipality" value="Municipality / City" />
+                                <select id="municipality" name="municipality" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" disabled>
+                                    <option value="">-- Select Municipality / City --</option>
+                                </select>
+                                <x-input-error :messages="$errors->get('municipality')" class="mt-1" />
+                            </div>
+
+                            <div>
+                                <x-input-label for="barangay" value="Barangay" />
+                                <select id="barangay" name="barangay" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" disabled>
+                                    <option value="">-- Select Barangay --</option>
+                                </select>
+                                <x-input-error :messages="$errors->get('barangay')" class="mt-1" />
+                            </div>
+                        </div>
+                    </div>
+
                     <div>
                         <x-input-label for="location" value="Location Description" />
                         <x-text-input id="location" type="text" name="location" value="{{ old('location') }}"
@@ -1284,6 +1315,150 @@
                         discardReasonOtherContainer.classList.remove('hidden');
                     } else {
                         discardReasonOtherContainer.classList.add('hidden');
+                    }
+                });
+            }
+
+            // PSGC Cascading Dropdowns
+            const regionSelect = document.getElementById('region');
+            const municipalitySelect = document.getElementById('municipality');
+            const barangaySelect = document.getElementById('barangay');
+
+            async function fetchOptions(url, params) {
+                try {
+                    const queryString = new URLSearchParams(params).toString();
+                    const fullUrl = `${url}?${queryString}`;
+                    // console.log('Fetching:', fullUrl);
+
+                    const response = await fetch(fullUrl, {
+                        headers: {
+                            'Accept': 'application/json',
+                        }
+                    });
+
+                    if (!response.ok) {
+                        console.error(`HTTP error! status: ${response.status}`);
+                        return {};
+                    }
+
+                    const data = await response.json();
+                    // console.log('Response:', data);
+                    return data;
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    return {};
+                }
+            }
+
+            function populateSelect(selectElement, options, placeholder = '-- Select --') {
+                selectElement.innerHTML = `<option value="">${placeholder}</option>`;
+                if (!options || options.length === 0) {
+                    selectElement.disabled = true;
+                    return;
+                }
+                options.forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.id;
+                    optionElement.textContent = option.name;
+                    optionElement.dataset.id = option.id;
+                    selectElement.appendChild(optionElement);
+                });
+                selectElement.disabled = false;
+            }
+
+            // Load regions on page load
+            async function loadInitialRegions() {
+                if (!regionSelect) return;
+
+                // console.log('Loading initial regions...');
+                const data = await fetchOptions('/api/locations/regions', {});
+
+                if (data.regions && data.regions.length > 0) {
+                    // console.log('Regions loaded:', data.regions.length);
+                    populateSelect(regionSelect, data.regions || [], '-- Select Region --');
+                } else {
+                    console.error('No regions returned from API');
+                    regionSelect.innerHTML = '<option value="">Error loading regions. Please refresh.</option>';
+                    regionSelect.disabled = true;
+                }
+            }
+
+            // Region change
+            if (regionSelect) {
+                regionSelect.addEventListener('change', async function() {
+                    municipalitySelect.innerHTML = '<option value="">Loading municipalities...</option>';
+                    barangaySelect.innerHTML = '<option value="">-- Select Barangay --</option>';
+
+                    municipalitySelect.disabled = true;
+                    barangaySelect.disabled = true;
+
+                    if (!this.value) {
+                        municipalitySelect.innerHTML = '<option value="">-- Select Municipality / City --</option>';
+                        return;
+                    }
+
+                    const regionId = this.value;
+                    const data = await fetchOptions('/api/locations/municipalities', {
+                        region_id: regionId
+                    });
+
+                    populateSelect(municipalitySelect, data.places || [], '-- Select Municipality / City --');
+                });
+            }
+
+            // Municipality change
+            if (municipalitySelect) {
+                municipalitySelect.addEventListener('change', async function() {
+                    barangaySelect.innerHTML = '<option value="">Loading barangays...</option>';
+                    barangaySelect.disabled = true;
+
+                    if (!this.value) {
+                        barangaySelect.innerHTML = '<option value="">-- Select Barangay --</option>';
+                        return;
+                    }
+
+                    const municipalityId = this.value;
+                    const data = await fetchOptions('/api/locations/barangays', {
+                        municipality_id: municipalityId
+                    });
+
+                    populateSelect(barangaySelect, data.barangays || [], '-- Select Barangay --');
+                });
+            }
+
+            // Initialize regions when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', loadInitialRegions);
+            } else {
+                loadInitialRegions();
+            }
+
+            // Merge PSGC location fields into location on form submit
+            const catchForm = document.getElementById('catchForm');
+            if (catchForm) {
+                catchForm.addEventListener('submit', function(e) {
+                    const locationInput = document.getElementById('location');
+                    const regionSelect = document.getElementById('region');
+                    const municipalitySelect = document.getElementById('municipality');
+                    const barangaySelect = document.getElementById('barangay');
+
+                    // Get selected text values (not IDs)
+                    const regionText = regionSelect?.selectedOptions[0]?.text || '';
+                    const municipalityText = municipalitySelect?.selectedOptions[0]?.text || '';
+                    const barangayText = barangaySelect?.selectedOptions[0]?.text || '';
+
+                    // Build location string from PSGC selections (Region, Municipality, Barangay)
+                    const psgcParts = [regionText, municipalityText, barangayText]
+                        .filter(part => part && !part.startsWith('--') && !part.startsWith('Loading'));
+
+                    if (psgcParts.length > 0) {
+                        // If user already typed something in location, append PSGC data
+                        const existingLocation = locationInput.value.trim();
+                        if (existingLocation) {
+                            locationInput.value = existingLocation + ' - ' + psgcParts.join(', ');
+                        } else {
+                            locationInput.value = psgcParts.join(', ');
+                        }
                     }
                 });
             }

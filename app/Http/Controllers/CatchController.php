@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FishCatch;
 use App\Models\GearType;
 use App\Models\Species;
+use App\Services\PsgcLocationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,7 +47,7 @@ class CatchController extends Controller
         return view('catches.index', compact('catches', 'species'));
     }
 
-    public function create()
+    public function create(PsgcLocationService $locationService)
     {
         $user = Auth::user();
         if ($user->isMao() || $user->isAdmin()) {
@@ -56,8 +57,9 @@ class CatchController extends Controller
         $species = Species::orderBy('common_name')->get();
         $categories = Species::distinct()->orderBy('category')->pluck('category');
         $gearTypes = GearType::orderBy('name')->get();
+        $regions = $locationService->getRegions();
 
-        return view('catches.create', compact('species', 'categories', 'gearTypes'));
+        return view('catches.create', compact('species', 'categories', 'gearTypes', 'regions'));
     }
 
     public function store(Request $request)
