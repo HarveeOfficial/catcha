@@ -99,67 +99,6 @@
                     <x-input-error :messages="$errors->get('comments')" class="mt-2" />
                 </div>
 
-                <!-- AI Assistant (suggest feedback) -->
-                <div x-data="aiSuggest()" class="border rounded p-4 bg-gray-50 mt-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <h4 class="font-semibold text-sm text-gray-700">AI Assistant Suggestion</h4>
-                        <span x-text="status" class="text-xs text-gray-500"></span>
-                    </div>
-                    <p class="text-xs text-gray-600 mb-3">Generate a draft sustainability / compliance review based on this catch's details. Edit before submitting.</p>
-                    <div class="flex flex-wrap gap-2 mb-3">
-                        <button type="button" @click="generate()" :disabled="loading" class="px-3 py-1.5 text-xs rounded bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white">Generate</button>
-                        <button type="button" @click="apply()" :disabled="!suggestion || loading" class="px-3 py-1.5 text-xs rounded bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white">Insert Into Comments</button>
-                        <button type="button" @click="clear()" :disabled="!suggestion || loading" class="px-3 py-1.5 text-xs rounded bg-gray-300 hover:bg-gray-400 disabled:opacity-50 text-gray-800">Clear</button>
-                    </div>
-                    <template x-if="loading">
-                        <div class="text-xs text-gray-500 animate-pulse">Thinking...</div>
-                    </template>
-                    <template x-if="error">
-                        <div class="text-xs text-red-600" x-text="error"></div>
-                    </template>
-                    <template x-if="suggestion">
-                        <div class="text-xs whitespace-pre-wrap bg-white border rounded p-2 max-h-56 overflow-y-auto" x-text="suggestion"></div>
-                    </template>
-                </div>
-                <script>
-                    function aiSuggest(){
-                        return {
-                            loading:false,
-                            status:'',
-                            suggestion:'',
-                            error:'',
-                            async generate(){
-                                this.error=''; this.suggestion=''; this.loading=true; this.status='Generating';
-                                const question = `Provide a concise professional sustainability & compliance review for the following fish catch. Include potential issues (size, season, gear, weather safety) and positive practices. Return plain text, no markdown lists. Do NOT assign a numeric rating.\n\nCatch Data:\nDate/Time: {{ $catch->caught_at->format('Y-m-d H:i') }}\nSpecies: {{ optional($catch->species)->common_name ?? 'N/A' }}\nQuantity (kg): {{ $catch->quantity }}\nCount: {{ $catch->count ?? 'N/A' }}\nLocation: {{ $catch->location }}\nGear: {{ $catch->gearType?->name ?? 'N/A' }}@php($w=$catch->weather)@if($w)\nWeather: Temp {{ $w['temperature_c'] ?? 'N/A' }}C, Wind {{ $w['wind_speed_kmh'] ?? 'N/A' }} km/h @if(isset($w['wind_dir_deg']))Dir {{ $w['wind_dir_deg'] }}°@endif, Humidity {{ $w['humidity_percent'] ?? 'N/A' }}%@endif`;
-                                try {
-                                    const resp = await fetch("{{ route('ai.consult') }}", {
-                                        method:'POST',
-                                        headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content},
-                                        body: JSON.stringify({question})
-                                    });
-                                    const data = await resp.json();
-                                    if(!resp.ok || data.error){
-                                        this.error = data.error || 'AI error';
-                                    } else {
-                                        this.suggestion = data.answer;
-                                        this.status='Ready';
-                                    }
-                                } catch(e){
-                                    console.error(e); this.error='Network error';
-                                } finally { this.loading=false; if(!this.error && !this.suggestion){ this.status=''; } }
-                            },
-                            apply(){
-                                if(!this.suggestion) return;
-                                const ta = document.getElementById('comments');
-                                if(ta.value.trim().length){
-                                    ta.value = ta.value + "\n\n" + this.suggestion;
-                                } else { ta.value = this.suggestion; }
-                                ta.dispatchEvent(new Event('input'));
-                            },
-                            clear(){ this.suggestion=''; this.error=''; this.status=''; }
-                        }
-                    }
-                </script>
                 <div>
                     <x-primary-button>Submit Feedback</x-primary-button>
                 </div>

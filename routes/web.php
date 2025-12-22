@@ -1,9 +1,6 @@
 <?php
 
 use App\Http\Controllers\Admin\ZoneController;
-use App\Http\Controllers\AiConsultController;
-use App\Http\Controllers\AiConversationController;
-use App\Http\Controllers\AiGuidanceController;
 use App\Http\Controllers\CatchAnalyticsController;
 use App\Http\Controllers\CatchController;
 use App\Http\Controllers\DashboardController;
@@ -98,21 +95,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/weather/city', WeatherCityController::class)->name('weather.city');
     // Interactive weather map (click-to-fetch current + forecast)
     Route::view('/weather/map', 'weather.map')->name('weather.map');
-    // Removed standalone weather page; weather now integrated into dashboard
-    // AI consult endpoint
-    Route::post('/ai/consult', AiConsultController::class)->name('ai.consult');
-    // Redirect the old consult page to the unified chat page with the consult tab
-    Route::get('/ai/consult', function () {
-        return redirect()->route('ai.chat', ['tab' => 'consult']);
-    });
-    Route::view('/ai/chat', 'ai.chat')->name('ai.chat');
-    // Seasonal trend endpoint (AI-assisted trend data)
-    Route::get('/ai/seasonal-trends', \App\Http\Controllers\SeasonalTrendController::class)->name('ai.seasonal-trends');
-    Route::view('/ai/seasonal-trends/view', 'ai.seasonal-trends')->name('ai.seasonal-trends.view');
-    Route::get('/ai/conversations', [AiConversationController::class, 'index'])->name('ai.conversations.index');
-    Route::get('/ai/conversations/{conversation}', [AiConversationController::class, 'show'])->name('ai.conversations.show');
-    Route::delete('/ai/conversations/{conversation}', [AiConversationController::class, 'destroy'])->name('ai.conversations.destroy');
-    Route::post('/ai/messages/{message}/to-guidance', [AiGuidanceController::class, 'store'])->name('ai.messages.to-guidance');
+
     // Feedback (experts/admins can submit; all authenticated can view list)
     Route::get('/catches/{fishCatch}/feedback', [\App\Http\Controllers\CatchFeedbackController::class, 'index'])->name('catches.feedback.index');
     Route::post('/catches/{fishCatch}/feedback', [\App\Http\Controllers\CatchFeedbackController::class, 'store'])->name('catches.feedback.store');
@@ -131,14 +114,6 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/guidances/{guidance}', [GuidanceController::class, 'destroy'])->name('guidances.destroy');
     Route::post('/guidances/{guidance}/approve', [GuidanceController::class, 'approve'])->name('guidances.approve');
     Route::post('/guidances/{guidance}/reject', [GuidanceController::class, 'reject'])->name('guidances.reject');
-
-    // AI Suggestions (cached per subject)
-    Route::get('/ai/suggestions/catches/{fishCatch}', [\App\Http\Controllers\AiSuggestionController::class, 'showCatch'])
-        ->whereNumber('fishCatch')
-        ->name('ai.suggestions.catches.show');
-    Route::post('/ai/suggestions/catches/{fishCatch}', [\App\Http\Controllers\AiSuggestionController::class, 'generateCatch'])
-        ->whereNumber('fishCatch')
-        ->name('ai.suggestions.catches.generate');
 
     // Live tracking: create a new track (returns publicId + writeKey)
     Route::get('/live-tracks', [LiveTrackController::class, 'index'])

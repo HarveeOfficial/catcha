@@ -47,9 +47,6 @@
                             {{ __('Analytics') }}
                         </x-nav-link>
                         @endunless
-                         <x-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
-                            {{ __('Seasonal Trends') }}
-                        </x-nav-link>
                         @unless(auth()->check() && auth()->user()->role === 'admin')
                             <x-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
                                 {{ __('Weather Map') }}
@@ -187,10 +184,6 @@
                 {{-- <x-responsive-nav-link :href="route('ai.chat')" :active="request()->routeIs('ai.chat')">
                     {{ __('AI Chat') }}
                 </x-responsive-nav-link> --}}
-                
-                <x-responsive-nav-link :href="route('ai.seasonal-trends.view')" :active="request()->routeIs('ai.seasonal-trends.view')">
-                    {{ __('Seasonal Trends') }}
-                </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('weather.map')" :active="request()->routeIs('weather.map')">
                     {{ __('Weather Map') }}
                 </x-responsive-nav-link>
