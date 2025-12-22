@@ -104,6 +104,79 @@
         </div>
     </div>
 
+    <!-- Smart Insights Section -->
+    @if(!empty($insights) && count($insights) > 0)
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">Smart Insights</h2>
+                    <p class="text-xs text-gray-500">Data-driven patterns and trends detected from your catch records</p>
+                </div>
+            </div>
+            <span class="text-xs text-gray-400">{{ count($insights) }} insights found</span>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            @foreach($insights as $insight)
+                @php
+                    $colorClasses = match($insight['color']) {
+                        'green' => 'bg-green-50 border-green-200 hover:bg-green-100',
+                        'red' => 'bg-red-50 border-red-200 hover:bg-red-100',
+                        'blue' => 'bg-blue-50 border-blue-200 hover:bg-blue-100',
+                        'amber' => 'bg-amber-50 border-amber-200 hover:bg-amber-100',
+                        'yellow' => 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100',
+                        'purple' => 'bg-purple-50 border-purple-200 hover:bg-purple-100',
+                        'teal' => 'bg-teal-50 border-teal-200 hover:bg-teal-100',
+                        'orange' => 'bg-orange-50 border-orange-200 hover:bg-orange-100',
+                        default => 'bg-gray-50 border-gray-200 hover:bg-gray-100',
+                    };
+                    $titleColor = match($insight['color']) {
+                        'green' => 'text-green-800',
+                        'red' => 'text-red-800',
+                        'blue' => 'text-blue-800',
+                        'amber' => 'text-amber-800',
+                        'yellow' => 'text-yellow-800',
+                        'purple' => 'text-purple-800',
+                        'teal' => 'text-teal-800',
+                        'orange' => 'text-orange-800',
+                        default => 'text-gray-800',
+                    };
+                    $descColor = match($insight['color']) {
+                        'green' => 'text-green-700',
+                        'red' => 'text-red-700',
+                        'blue' => 'text-blue-700',
+                        'amber' => 'text-amber-700',
+                        'yellow' => 'text-yellow-700',
+                        'purple' => 'text-purple-700',
+                        'teal' => 'text-teal-700',
+                        'orange' => 'text-orange-700',
+                        default => 'text-gray-700',
+                    };
+                @endphp
+                <div class="rounded-lg border p-4 transition-all duration-200 cursor-default {{ $colorClasses }}">
+                    <div class="flex items-start gap-3">
+                        <span class="text-2xl flex-shrink-0">{{ $insight['icon'] }}</span>
+                        <div class="min-w-0">
+                            <h3 class="font-semibold text-sm {{ $titleColor }} truncate" title="{{ $insight['title'] }}">
+                                {{ $insight['title'] }}
+                            </h3>
+                            <p class="text-xs {{ $descColor }} mt-1 leading-relaxed">
+                                {{ $insight['description'] }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
     <!-- Tabs Navigation -->
     <div class="bg-white rounded-lg shadow-md">
         <div class="border-b border-gray-200">

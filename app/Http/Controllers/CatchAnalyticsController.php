@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FishCatch;
 use App\Models\Species;
+use App\Services\CatchInsightsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -566,6 +567,10 @@ class CatchAnalyticsController extends Controller
             ->groupBy('discard_reason')
             ->get();
 
+        // Generate data-driven insights
+        $insightsService = new CatchInsightsService;
+        $insights = $insightsService->generateInsights(clone $base);
+
         return view('catches.analytics', [
             'totalSummary' => $totalSummary,
             'topSpecies' => $topSpecies,
@@ -584,6 +589,7 @@ class CatchAnalyticsController extends Controller
             'discardSummary' => $discardSummary,
             'discardSpecies' => $discardSpecies,
             'discardReasons' => $discardReasons,
+            'insights' => $insights,
         ]);
     }
 
