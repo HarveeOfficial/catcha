@@ -567,6 +567,25 @@ class CatchAnalyticsController extends Controller
             ->groupBy('discard_reason')
             ->get();
 
+        // Vessel/Boat breakdown
+        $vesselBreakdown = (clone $base)
+            ->selectRaw('vessel_name, COUNT(*) as catches, SUM(quantity) as qty')
+            ->whereNotNull('vessel_name')
+            ->groupBy('vessel_name')
+            ->orderByDesc('qty')
+            ->get();
+
+        // Vessel/Boat species breakdown
+        $vesselSpecies = (clone $base)
+            ->whereNotNull('fish_catches.vessel_name')
+            ->whereNotNull('fish_catches.species_id')
+            ->with('species')
+            ->selectRaw('fish_catches.vessel_name, fish_catches.species_id, COALESCE(SUM(fish_catches.quantity),0) as qty, COALESCE(SUM(fish_catches.count),0) as catch_count')
+            ->groupBy('fish_catches.vessel_name', 'fish_catches.species_id')
+            ->orderByDesc('qty')
+            ->get()
+            ->groupBy('vessel_name');
+
         // Generate data-driven insights
         $insightsService = new CatchInsightsService;
         $insights = $insightsService->generateInsights(clone $base);
@@ -583,6 +602,8 @@ class CatchAnalyticsController extends Controller
             'gearBreakdown' => $gearBreakdown,
             'gearSpecies' => $gearSpecies,
             'zoneBreakdown' => $zoneBreakdown,
+            'vesselBreakdown' => $vesselBreakdown,
+            'vesselSpecies' => $vesselSpecies,
             'speciesList' => $speciesList,
             'bycatchSummary' => $bycatchSummary,
             'bycatchSpecies' => $bycatchSpecies,

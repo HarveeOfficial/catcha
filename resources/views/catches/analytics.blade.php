@@ -382,6 +382,53 @@
                     </div>
                 </div>
 
+                <!-- Vessel/Boat Breakdown Table -->
+                <div class="p-4 bg-white rounded border shadow">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-semibold text-gray-700 text-sm mb-2">Catch per Vessel/Boat</h2>
+                    </div>
+                    <div class="table-container" x-data="vesselBreakdown()">
+                        <table class="w-full text-xs">
+                            <thead><tr class="text-left text-gray-500"><th class="py-1">Vessel/Boat Name</th><th class="py-1">Qty (kg)</th><th class="py-1">Catches</th></tr></thead>
+                            <tbody>
+                            @forelse($vesselBreakdown as $v)
+                                <tr class="border-t hover:bg-gray-50 cursor-pointer" @click="toggle('{{ $v->vessel_name ?? 'Unknown' }}')">
+                                    <td class="py-1 font-medium text-sky-600">
+                                        <span x-text="expanded['{{ $v->vessel_name ?? 'Unknown' }}'] ? '▼' : '▶'"></span>
+                                        {{ $v->vessel_name ?? 'Unknown' }}
+                                    </td>
+                                    <td class="py-1">{{ number_format($v->qty, 2) }}</td>
+                                    <td class="py-1">{{ $v->catches }}</td>
+                                </tr>
+                                @if(isset($vesselSpecies[$v->vessel_name ?? 'Unknown']))
+                                    <tr x-show="expanded['{{ $v->vessel_name ?? 'Unknown' }}']" class="bg-gray-50">
+                                        <td colspan="3" class="py-2">
+                                            <div class="ml-4 text-xs">
+                                                <div class="font-semibold text-gray-600 mb-1">Species caught:</div>
+                                                <table class="w-full text-xs">
+                                                    <thead><tr class="text-gray-500"><th class="text-left py-1">Species</th><th class="text-right py-1">Qty (kg)</th><th class="text-right py-1">Count</th></tr></thead>
+                                                    <tbody>
+                                                    @foreach($vesselSpecies[$v->vessel_name ?? 'Unknown'] as $s)
+                                                        <tr class="border-t border-gray-200">
+                                                            <td class="py-1">{{ $s->species?->common_name ?? 'Unknown' }}</td>
+                                                            <td class="text-right py-1">{{ number_format($s->qty, 2) }}</td>
+                                                            <td class="text-right py-1">{{ $s->catch_count }}</td>
+                                                        </tr>
+                                                    @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
+                            @empty
+                                <tr><td colspan="3" class="text-gray-400 italic py-2">No data</td></tr>
+                            @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <!-- Daily and Monthly Tables -->
                 <div class="grid md:grid-cols-2 gap-6">
                     <div class="p-4 bg-white rounded border shadow">
@@ -1209,6 +1256,16 @@
                 });
             }
         @endif
+    }
+
+    // Vessel Breakdown Alpine Component
+    function vesselBreakdown() {
+        return {
+            expanded: {},
+            toggle(vesselName) {
+                this.expanded[vesselName] = !this.expanded[vesselName];
+            }
+        };
     }
 
     // CSV Export Modal Functions
