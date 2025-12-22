@@ -84,8 +84,16 @@
                             <x-input-error :messages="$errors->get('gear_type_id')" class="mt-1" />
                         </div>
                         <div>
-                            <x-input-label for="vessel_name" value="Vessel Name" />
-                            <x-text-input id="vessel_name" type="text" name="vessel_name" value="{{ old('vessel_name', $catch->vessel_name) }}" class="mt-1 block w-full" />
+                            <x-input-label for="vessel_name" value="Vessel" />
+                            <select id="vessel_name" name="vessel_name"
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">-- Select Vessel --</option>
+                                @foreach ($boats as $boat)
+                                    <option value="{{ $boat->name }}" @selected(old('vessel_name', $catch->vessel_name) == $boat->name)>
+                                        {{ $boat->name }} ({{ $boat->registration_number }})
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                 </fieldset>

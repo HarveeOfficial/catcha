@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Boat;
 use App\Models\FishCatch;
 use App\Models\GearType;
 use App\Models\Species;
@@ -58,8 +59,11 @@ class CatchController extends Controller
         $categories = Species::distinct()->orderBy('category')->pluck('category');
         $gearTypes = GearType::orderBy('name')->get();
         $regions = $locationService->getRegions();
+        $boats = Boat::where('status', 'active')
+            ->orderBy('name')
+            ->get();
 
-        return view('catches.create', compact('species', 'categories', 'gearTypes', 'regions'));
+        return view('catches.create', compact('species', 'categories', 'gearTypes', 'regions', 'boats'));
     }
 
     public function store(Request $request)
@@ -151,11 +155,15 @@ class CatchController extends Controller
         }
         $species = Species::orderBy('common_name')->get();
         $gearTypes = GearType::orderBy('name')->get();
+        $boats = Boat::where('status', 'active')
+            ->orderBy('name')
+            ->get();
 
         return view('catches.edit', [
             'catch' => $fishCatch,
             'species' => $species,
             'gearTypes' => $gearTypes,
+            'boats' => $boats,
         ]);
     }
 

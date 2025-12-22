@@ -29,6 +29,9 @@
                         <x-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.*') && ! request()->routeIs('catches.analytics') && ! request()->routeIs('catches.heatmap')">
                             {{ __('Catches') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('mao.boats.index')" :active="request()->routeIs('mao.boats.*')">
+                            {{ __('Boats') }}
+                        </x-nav-link>
                         <x-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
                             {{ __('Analytics') }}
                         </x-nav-link>
@@ -156,6 +159,9 @@
             @elseif(auth()->check() && auth()->user()->isMao())
                 <x-responsive-nav-link :href="route('catches.index')" :active="request()->routeIs('catches.index')">
                     {{ __('Catches') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('mao.boats.index')" :active="request()->routeIs('mao.boats.*')">
+                    {{ __('Boats') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('catches.analytics')" :active="request()->routeIs('catches.analytics')">
                     {{ __('Analytics') }}
