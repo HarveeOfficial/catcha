@@ -194,26 +194,26 @@
                         <div class="grid gap-4 md:grid-cols-3">
                             <div>
                                 <x-input-label for="region" value="Region" />
-                                <select id="region" name="region" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <select id="region" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                     <option value="">Loading regions...</option>
                                 </select>
-                                <x-input-error :messages="$errors->get('region')" class="mt-1" />
+                                <input type="hidden" id="psgc_region" name="psgc_region" value="{{ old('psgc_region') }}">
                             </div>
 
                             <div>
                                 <x-input-label for="municipality" value="Municipality / City" />
-                                <select id="municipality" name="municipality" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" disabled>
+                                <select id="municipality" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" disabled>
                                     <option value="">-- Select Municipality / City --</option>
                                 </select>
-                                <x-input-error :messages="$errors->get('municipality')" class="mt-1" />
+                                <input type="hidden" id="psgc_municipality" name="psgc_municipality" value="{{ old('psgc_municipality') }}">
                             </div>
 
                             <div>
                                 <x-input-label for="barangay" value="Barangay" />
-                                <select id="barangay" name="barangay" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" disabled>
+                                <select id="barangay" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500" disabled>
                                     <option value="">-- Select Barangay --</option>
                                 </select>
-                                <x-input-error :messages="$errors->get('barangay')" class="mt-1" />
+                                <input type="hidden" id="psgc_barangay" name="psgc_barangay" value="{{ old('psgc_barangay') }}">
                             </div>
                         </div>
                     </div>
@@ -482,6 +482,20 @@
                     }
                 }
             })();
+
+            // Listen for PSGC location selection (no-map flow)
+            window.addEventListener('psgcLocationSelected', function(e) {
+                const { lat, lon, name } = e.detail;
+                if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                    updateInputs(lat, lon, {
+                        source: 'psgc'
+                    });
+                    if (statusEl) {
+                        statusEl.textContent = 'Location: ' + (name || 'Selected from PSGC');
+                    }
+                }
+            });
+
             detectBtn?.addEventListener('click', function() {
                 if (!navigator.geolocation) {
                     return alert('Geolocation not supported');
@@ -918,6 +932,20 @@
                     map.setView([q.lat, q.lon], 13);
                 }
             })();
+
+            // Listen for PSGC location selection and move the map
+            window.addEventListener('psgcLocationSelected', function(e) {
+                const { lat, lon, name } = e.detail;
+                if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                    updateInputs(lat, lon, {
+                        source: 'psgc'
+                    });
+                    map.setView([lat, lon], 13);
+                    if (statusEl) {
+                        statusEl.textContent = 'Location: ' + (name || 'Selected from PSGC');
+                    }
+                }
+            });
 
             if (detectBtn) {
                 detectBtn.addEventListener('click', function() {
@@ -1433,32 +1461,86 @@
                 loadInitialRegions();
             }
 
-            // Merge PSGC location fields into location on form submit
-            const catchForm = document.getElementById('catchForm');
-            if (catchForm) {
-                catchForm.addEventListener('submit', function(e) {
-                    const locationInput = document.getElementById('location');
-                    const regionSelect = document.getElementById('region');
-                    const municipalitySelect = document.getElementById('municipality');
-                    const barangaySelect = document.getElementById('barangay');
-
-                    // Get selected text values (not IDs)
-                    const regionText = regionSelect?.selectedOptions[0]?.text || '';
-                    const municipalityText = municipalitySelect?.selectedOptions[0]?.text || '';
-                    const barangayText = barangaySelect?.selectedOptions[0]?.text || '';
-
-                    // Build location string from PSGC selections (Region, Municipality, Barangay)
-                    const psgcParts = [regionText, municipalityText, barangayText]
-                        .filter(part => part && !part.startsWith('--') && !part.startsWith('Loading'));
-
-                    if (psgcParts.length > 0) {
-                        // If user already typed something in location, append PSGC data
-                        const existingLocation = locationInput.value.trim();
-                        if (existingLocation) {
-                            locationInput.value = existingLocation + ' - ' + psgcParts.join(', ');
-                        } else {
-                            locationInput.value = psgcParts.join(', ');
+            // Geocode a location name and move the map to it
+            async function geocodeAndMoveMap(locationName) {
+                if (!locationName) return;
+                
+                try {
+                    // Add "Philippines" to improve geocoding accuracy
+                    const query = encodeURIComponent(locationName + ', Philippines');
+                    const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`, {
+                        headers: {
+                            'Accept': 'application/json',
                         }
+                    });
+                    
+                    if (!response.ok) return;
+                    
+                    const results = await response.json();
+                    if (results && results.length > 0) {
+                        const lat = parseFloat(results[0].lat);
+                        const lon = parseFloat(results[0].lon);
+                        
+                        if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                            // Dispatch a custom event that the map can listen to
+                            window.dispatchEvent(new CustomEvent('psgcLocationSelected', {
+                                detail: { lat, lon, name: locationName }
+                            }));
+                        }
+                    }
+                } catch (error) {
+                    console.error('Geocoding error:', error);
+                }
+            }
+
+            // Build full location string from selected dropdowns
+            function getFullLocationString() {
+                const region = regionSelect?.selectedOptions[0]?.text || '';
+                const municipality = municipalitySelect?.selectedOptions[0]?.text || '';
+                const barangay = barangaySelect?.selectedOptions[0]?.text || '';
+                
+                const parts = [];
+                if (barangay && !barangay.startsWith('--') && !barangay.startsWith('Loading')) {
+                    parts.push(barangay);
+                }
+                if (municipality && !municipality.startsWith('--') && !municipality.startsWith('Loading')) {
+                    parts.push(municipality);
+                }
+                if (region && !region.startsWith('--') && !region.startsWith('Loading')) {
+                    parts.push(region);
+                }
+                
+                return parts.join(', ');
+            }
+
+            // Update hidden PSGC fields when dropdowns change
+            if (regionSelect) {
+                regionSelect.addEventListener('change', function() {
+                    const text = this.selectedOptions[0]?.text || '';
+                    document.getElementById('psgc_region').value = (text && !text.startsWith('--') && !text.startsWith('Loading')) ? text : '';
+                    // Geocode when region changes (if no municipality/barangay selected)
+                    if (text && !text.startsWith('--') && !text.startsWith('Loading')) {
+                        geocodeAndMoveMap(text);
+                    }
+                });
+            }
+            if (municipalitySelect) {
+                municipalitySelect.addEventListener('change', function() {
+                    const text = this.selectedOptions[0]?.text || '';
+                    document.getElementById('psgc_municipality').value = (text && !text.startsWith('--') && !text.startsWith('Loading')) ? text : '';
+                    // Geocode when municipality changes
+                    if (text && !text.startsWith('--') && !text.startsWith('Loading')) {
+                        geocodeAndMoveMap(getFullLocationString());
+                    }
+                });
+            }
+            if (barangaySelect) {
+                barangaySelect.addEventListener('change', function() {
+                    const text = this.selectedOptions[0]?.text || '';
+                    document.getElementById('psgc_barangay').value = (text && !text.startsWith('--') && !text.startsWith('Loading')) ? text : '';
+                    // Geocode when barangay changes
+                    if (text && !text.startsWith('--') && !text.startsWith('Loading')) {
+                        geocodeAndMoveMap(getFullLocationString());
                     }
                 });
             }

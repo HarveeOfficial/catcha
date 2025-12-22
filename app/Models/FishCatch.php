@@ -10,7 +10,7 @@ class FishCatch extends Model
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
 
     protected $fillable = [
-        'user_id', 'species_id', 'zone_id', 'gear_type_id', 'location', 'latitude', 'longitude', 'geo_accuracy_m', 'geohash', 'geo_source', 'caught_at', 'quantity', 'count', 'avg_size_cm', 'vessel_name', 'bycatch_quantity', 'bycatch_species_ids', 'discard_quantity', 'discard_species_ids', 'discard_reason', 'discard_reason_other', 'environmental_data', 'notes', 'flagged', 'flag_reason',
+        'user_id', 'species_id', 'zone_id', 'gear_type_id', 'location', 'psgc_region', 'psgc_municipality', 'psgc_barangay', 'latitude', 'longitude', 'geo_accuracy_m', 'geohash', 'geo_source', 'caught_at', 'quantity', 'count', 'avg_size_cm', 'vessel_name', 'bycatch_quantity', 'bycatch_species_ids', 'discard_quantity', 'discard_species_ids', 'discard_reason', 'discard_reason_other', 'environmental_data', 'notes', 'flagged', 'flag_reason',
     ];
 
     protected $casts = [
